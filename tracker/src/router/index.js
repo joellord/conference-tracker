@@ -1,15 +1,27 @@
 import Vue from "vue";
 import Router from "vue-router";
-import HelloWorld from "@/components/HelloWorld";
+import Welcome from "@/components/welcome";
+import Dashboard from "@/components/dashboard";
+import Callback from "@/components/callback";
 
 Vue.use(Router);
 
 export default new Router({
+  mode: "history",
   routes: [
     {
       path: "/",
-      name: "HelloWorld",
-      component: HelloWorld,
+      name: "Welcome",
+      component: Welcome
     },
-  ],
+    {
+      path: "/dashboard",
+      name: "Dashboard",
+      component: Dashboard
+    },
+    {
+      path: "/callback",
+      component: Callback
+    }
+  ]
 });

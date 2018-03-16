@@ -20,7 +20,7 @@ const authCheck = jwt({
     jwksRequestsPerMinute: 5,
     jwksUri: `https://${creds.DOMAIN}/.well-known/jwks.json`
   }),
-  audience: creds.audience,
+  audience: creds.AUDIENCE,
   issuer: `https://${creds.DOMAIN}`,
   algorithms: ["RS256"]
 });
