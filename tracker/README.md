@@ -28,3 +28,9 @@ npm test
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+
+## Google Cloud Platform DB
+Start the proxy with
+``` bash
+./cloud_sql_proxy -instances="conference-tracker:us-central1:conference-tracker"=tcp:3306
+```

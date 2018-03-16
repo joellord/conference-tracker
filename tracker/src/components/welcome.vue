@@ -9,10 +9,16 @@
 
 <script>
 import AppNav from "./AppNav";
+import { isLoggedIn } from "../utils/auth";
 
 export default {
   components: { AppNav },
-  name: "Welcome"
+  name: "Welcome",
+  mounted() {
+    if (isLoggedIn()) {
+      this.$router.push("/dashboard");
+    }
+  }
 };
 </script>
 
