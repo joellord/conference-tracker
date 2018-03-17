@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken } from "./auth";
+import { getAccessToken, getUserParam } from "./auth";
 
 const BASE_URL = "http://localhost:3333";
 
@@ -18,11 +18,15 @@ function addConference(data) {
   return axios.post(url, data, getHeaders()).then(resp => resp.data);
 }
 
-function getTalks() {
+function getMyTalks() {
   const url = `${BASE_URL}/api/talks`;
-  const authToken = getAccessToken();
-  const headers = authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {};
-  return axios.get(url, headers).then(resp => resp.data);
+  return axios.get(url, getHeaders()).then(resp => resp.data);
 }
 
-export { getConferences, getTalks, addConference };
+function addTalk(data) {
+  const url = `${BASE_URL}/api/talk`;
+  data.userId = getUserParam("sub");
+  return axios.post(url, data, getHeaders()).then(resp => resp.data);
+}
+
+export { getConferences, getMyTalks, addConference, addTalk };

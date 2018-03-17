@@ -49,6 +49,7 @@ module.exports = {
     "no-console": process.env.NODE_ENV === "production" ? "error" : "off",
     "quotes": ["error", "double"],
     "comma-dangle": ["error", "never"],
-    "max-len": ["error", 150]
+    "max-len": ["error", 150],
+    "no-param-reassign": 0
   }
 };
