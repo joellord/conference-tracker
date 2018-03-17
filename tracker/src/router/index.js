@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Router from "vue-router";
 import Welcome from "@/components/welcome";
-import Dashboard from "@/components/dashboard";
+import Conferences from "@/components/conferences";
 import Callback from "@/components/callback";
 import { requireAuth } from "../utils/auth";
 
@@ -16,9 +16,9 @@ export default new Router({
       component: Welcome
     },
     {
-      path: "/dashboard",
-      name: "Dashboard",
-      component: Dashboard,
+      path: "/conferences",
+      name: "Conferences",
+      component: Conferences,
       beforeEnter: requireAuth
     },
     {

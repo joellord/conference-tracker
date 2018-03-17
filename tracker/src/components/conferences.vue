@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard">
+  <div class="conferences">
     <app-nav></app-nav>
 
     <b-row><b-col>&nbsp;</b-col></b-row>
@@ -55,7 +55,7 @@ import { getConferences } from "../utils/conf-api";
 
 export default {
   components: { AppNav, ConferenceAddModal },
-  name: "dashboard",
+  name: "conferences",
   data() {
     return {
       conferences: [],

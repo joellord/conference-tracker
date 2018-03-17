@@ -20,7 +20,7 @@ export default {
   },
   mounted() {
     if (isLoggedIn()) {
-      this.$router.push("/dashboard");
+      this.$router.push("/conferences");
     }
   }
 };

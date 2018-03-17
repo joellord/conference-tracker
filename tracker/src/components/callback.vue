@@ -13,7 +13,7 @@ export default {
     this.$nextTick(() => {
       setAccessToken();
       setIdToken();
-      window.location.href = "/";
+      window.location.href = "/conferences";
     });
   }
 };
