@@ -51,7 +51,32 @@ app.get("/api/public", (req, res) => {
 });
 
 app.get("/api/conferences", authCheck, (req, res) => {
-  knex.select().table("conferences").then(data => res.json(data));
+
+  let userId = getUserId(req.headers);
+  // SELECT c.*, count(s.id) totalSubmissions,
+  //     (SELECT COUNT(su.id) FROM submissions su, talks ta
+  //      WHERE ta.id = su.talkId AND ta.userId = "google-oauth2|102260477336632272051"
+  //        AND su.conferenceId = c.id GROUP BY c.id) as mySubmissions
+  // from conferences as c left join submissions s on c.id = s.conferenceId
+  // group by c.id
+  const innerSelect = knex("submissions AS su")
+      .count("su.id")
+      .leftJoin("talks AS ta", "su.talkId", "ta.id")
+      .where("ta.userId", userId)
+      .whereRaw("`su`.`conferenceId` = `c`.`id`")
+      .groupBy("c.id");
+  const outerSelect = knex("conferences AS c")
+      .select("*", "c.id AS conferenceId")
+      .count("s.id AS totalSubmissions")
+      .select(innerSelect.as("mySubmissions"))
+      .leftJoin("submissions AS s", "c.id", "s.conferenceId")
+      .groupBy("c.id");
+
+  outerSelect.then(data => res.json(data));
+});
+
+app.get("/api/conference/:id", authCheck, (req, res) => {
+  knex("conferences").where("id", req.params.id).then(data => res.json(data[0]));
 });
 
 app.post("/api/conference", authCheck, (req, res) => {
@@ -65,6 +90,21 @@ app.get("/api/talks", authCheck, (req, res) => {
 
 app.post("/api/talk", authCheck, (req, res) => {
   knex("talks").insert(req.body).then(record => res.status(200).send(record)).catch(err => console.log(err));
+});
+
+app.post("/api/submissions", authCheck, (req, res) => {
+  let promiseArray = [];
+  req.body.map((submission) => {
+    const op = knex("submissions").where({talkId: submission.talkId, conferenceId: submission.conferenceId}).then(data => {
+      if (data.length === 0) {
+        return knex("submissions").insert(submission);
+      }
+    });
+
+    promiseArray.push(op);
+  });
+
+  Promise.all(promiseArray).then(data => res.status(200).send(data));
 });
 
 app.listen(port);

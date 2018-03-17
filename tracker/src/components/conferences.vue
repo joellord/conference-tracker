@@ -24,15 +24,25 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="conference in conferences" :key="conference.id">
+            <tr v-for="conference in conferences" :key="conference.conferenceId">
               <td>
                 <a :href="conference.url" target="_blank">{{ conference.name }}</a>
               </td>
               <td>
                 <ul class="list-inline">
-                  <li class="list-inline-item">
-                    <router-link :to="'api/conferences/apply/' + conference.id">
-                      Applied
+                  <li class="list-inline-item" v-if="conference.mySubmissions">
+                    Submitted
+                    <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
+                  </li>
+                  <li class="list-inline-item" v-if="conference.mySubmissions">
+                    Approved
+                  </li>
+                  <li class="list-inline-item" v-if="conference.mySubmissions">
+                    Rejected
+                  </li>
+                  <li class="list-inline-item" v-if="!conference.mySubmissions">
+                    <router-link :to="'conferences/submitted/' + conference.conferenceId">
+                      Submit
                     </router-link>
                     <span v-show="conference.cfpUrl && conference.cfpEnd > now">
                       (<a :href="conference.cfpUrl">CFP</a>)
