@@ -20,6 +20,8 @@
           <thead class="thead-dark">
             <tr>
               <th scope="col">Conference Name</th>
+              <th scope="col">Submitted<br/>Approved<br/>Rejected</th>
+              <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -29,16 +31,26 @@
                 <a :href="conference.url" target="_blank">{{ conference.name }}</a>
               </td>
               <td>
+                <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
+                <b-badge pill variant="success">{{ conference.myApproved }}</b-badge>
+                <b-badge pill variant="danger">{{ conference.myRejected }}</b-badge>
+              </td>
+              <td>
+                <span v-if="!conference.mySubmissions">N/A</span>
+                <span v-if="conference.mySubmissions > 0 && conference.mySubmissions === conference.myUndefined">Submitted</span>
+                <span v-if="conference.mySubmissions && conference.myApproved">Approved</span>
+                <span v-if="conference.mySubmissions && conference.myRejected === conference.mySubmissions">Rejected</span>
+              </td>
+              <td>
                 <ul class="list-inline">
-                  <li class="list-inline-item" v-if="conference.mySubmissions">
-                    Submitted
-                    <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
+                  <li class="list-inline-item" v-if="conference.mySubmissions && conference.myApproved">
+                    👍 (details)
                   </li>
-                  <li class="list-inline-item" v-if="conference.mySubmissions">
-                    Approved
-                  </li>
-                  <li class="list-inline-item" v-if="conference.mySubmissions">
-                    Rejected
+                  <li class="list-inline-item" v-if="conference.mySubmissions && conference.myUndefined">
+                    <router-link :to="'conferences/approved/' + conference.conferenceId">
+                      <b-btn variant="sm" class="btn-success">Approved</b-btn>
+                    </router-link>
+                    <b-btn variant="sm" class="btn-danger" @click="rejectConference(conference.conferenceId)">Rejected</b-btn>
                   </li>
                   <li class="list-inline-item" v-if="!conference.mySubmissions">
                     <router-link :to="'conferences/submitted/' + conference.conferenceId">
@@ -61,7 +73,7 @@
 <script>
 import AppNav from "./AppNav";
 import ConferenceAddModal from "./conference-add-modal";
-import { getConferences } from "../utils/conf-api";
+import { getConferences, rejectConference } from "../utils/conf-api";
 
 export default {
   components: { AppNav, ConferenceAddModal },
@@ -80,6 +92,9 @@ export default {
       getConferences().then((conferences) => {
         this.conferences = conferences;
       });
+    },
+    rejectConference(id) {
+      rejectConference(id).then(this.getConferences);
     }
   }
 };

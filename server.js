@@ -59,16 +59,41 @@ app.get("/api/conferences", authCheck, (req, res) => {
   //        AND su.conferenceId = c.id GROUP BY c.id) as mySubmissions
   // from conferences as c left join submissions s on c.id = s.conferenceId
   // group by c.id
-  const innerSelect = knex("submissions AS su")
+  const mySubmissions = knex("submissions AS su")
       .count("su.id")
       .leftJoin("talks AS ta", "su.talkId", "ta.id")
       .where("ta.userId", userId)
       .whereRaw("`su`.`conferenceId` = `c`.`id`")
       .groupBy("c.id");
+  const myApproved = knex("submissions AS su")
+      .count("su.id")
+      .leftJoin("talks AS ta", "su.talkId", "ta.id")
+      .where("ta.userId", userId)
+      .where("su.approved", true)
+      .whereRaw("`su`.`conferenceId` = `c`.`id`")
+      .groupBy("c.id");
+  const myRejected = knex("submissions AS su")
+      .count("su.id")
+      .leftJoin("talks AS ta", "su.talkId", "ta.id")
+      .where("ta.userId", userId)
+      .where("su.rejected", true)
+      .whereRaw("`su`.`conferenceId` = `c`.`id`")
+      .groupBy("c.id");
+  const myUndefined = knex("submissions AS su")
+      .count("su.id")
+      .leftJoin("talks AS ta", "su.talkId", "ta.id")
+      .where("ta.userId", userId)
+      .where("su.approved", false)
+      .where("su.rejected", false)
+      .whereRaw("`su`.`conferenceId` = `c`.`id`")
+      .groupBy("c.id");
   const outerSelect = knex("conferences AS c")
       .select("*", "c.id AS conferenceId")
       .count("s.id AS totalSubmissions")
-      .select(innerSelect.as("mySubmissions"))
+      .select(mySubmissions.as("mySubmissions"))
+      .select(myApproved.as("myApproved"))
+      .select(myRejected.as("myRejected"))
+      .select(myUndefined.as("myUndefined"))
       .leftJoin("submissions AS s", "c.id", "s.conferenceId")
       .groupBy("c.id");
 
@@ -77,6 +102,47 @@ app.get("/api/conferences", authCheck, (req, res) => {
 
 app.get("/api/conference/:id", authCheck, (req, res) => {
   knex("conferences").where("id", req.params.id).then(data => res.json(data[0]));
+});
+
+app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
+  let userId = getUserId(req.headers);
+  knex("submissions AS s")
+      .columns(["s.id AS submissionId", "t.id", "t.title"])
+      .leftJoin("talks AS t", "s.talkId", "t.id")
+      .where("t.userId", userId)
+      .where("s.conferenceId", req.params.id)
+      .then(data => res.json(data));
+});
+
+app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
+  const approvedSubmissions = req.body;
+  const userId = getUserId(req.headers);
+  const promiseArray = [
+    knex("submissions AS s")
+        .leftJoin("talks AS t", "t.id", "s.talkId")
+        .where("s.conferenceId", req.params.id)
+        .where("t.userId", userId)
+        .whereIn("s.id", approvedSubmissions)
+        .update({approved: true}),
+    knex("submissions AS s")
+        .leftJoin("talks AS t", "t.id", "s.talkId")
+        .where("s.conferenceId", req.params.id)
+        .where("t.userId", userId)
+        .whereNotIn("s.id", approvedSubmissions)
+        .update({rejected: true}),
+  ];
+
+  Promise.all(promiseArray).then(data => res.status(200).send(data));
+});
+
+app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
+  const userId = getUserId(req.headers);
+  knex("submissions AS s")
+      .leftJoin("talks AS t", "t.id", "s.talkId")
+      .where("s.conferenceId", req.params.id)
+      .where("t.userId", userId)
+      .update({rejected: true})
+      .then(data => res.status(200).send({data}));
 });
 
 app.post("/api/conference", authCheck, (req, res) => {

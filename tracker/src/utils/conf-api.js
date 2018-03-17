@@ -28,6 +28,11 @@ function getMyTalks() {
   return axios.get(url, getHeaders()).then(resp => resp.data);
 }
 
+function getMySubmissions(conferenceId) {
+  const url = `${BASE_URL}/api/conference/${conferenceId}/submissions`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
 function addTalk(data) {
   const url = `${BASE_URL}/api/talk`;
   data.userId = getUserParam("sub");
@@ -39,4 +44,24 @@ function addSubmissions(data) {
   return axios.post(url, data, getHeaders()).then(resp => resp.data);
 }
 
-export { getConferences, getConference, addConference, getMyTalks, addTalk, addSubmissions };
+function addApprovals(conferenceId, approvals) {
+  const url = `${BASE_URL}/api/conference/${conferenceId}/approvals`;
+  return axios.post(url, approvals, getHeaders()).then(resp => resp.data);
+}
+
+function rejectConference(conferenceId) {
+  const url = `${BASE_URL}/api/conference/${conferenceId}/rejected`;
+  return axios.post(url, { conferenceId }, getHeaders()).then(resp => resp.data);
+}
+
+export {
+  getConferences,
+  getConference,
+  addConference,
+  getMyTalks,
+  addTalk,
+  getMySubmissions,
+  addSubmissions,
+  addApprovals,
+  rejectConference
+};

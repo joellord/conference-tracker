@@ -5,6 +5,7 @@ import Conferences from "@/components/conferences";
 import Talks from "@/components/talks";
 import Callback from "@/components/callback";
 import Submitted from "@/components/submitted";
+import Approved from "@/components/approved";
 import { requireAuth } from "../utils/auth";
 
 Vue.use(Router);
@@ -27,6 +28,12 @@ export default new Router({
       path: "/conferences/submitted/:conferenceId",
       name: "Submitted",
       component: Submitted,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/conferences/approved/:conferenceId",
+      name: "Approved",
+      component: Approved,
       beforeEnter: requireAuth
     },
     {
