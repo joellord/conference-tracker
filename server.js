@@ -133,6 +133,10 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   ];
 
   Promise.all(promiseArray).then(data => res.status(200).send(data));
+
+  // Approval Hooks
+  // Add to Sheet:
+  // https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/?name=conf&start=date&end=date&location=City,State,Country&speaker=name&talk=title
 });
 
 app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
@@ -171,6 +175,17 @@ app.post("/api/submissions", authCheck, (req, res) => {
   });
 
   Promise.all(promiseArray).then(data => res.status(200).send(data));
+});
+
+app.post("/api/user", authCheck, (req, res) => {
+  const userId = getUserId(req.headers);
+  knex("users").where("id", userId).then(data => {
+    if (data.length === 0) {
+      const user = req.body;
+      user.id = userId;
+      knex("users").insert(user).then(record => res.send(200));
+    }
+  })
 });
 
 app.listen(port);

@@ -54,6 +54,11 @@ function rejectConference(conferenceId) {
   return axios.post(url, { conferenceId }, getHeaders()).then(resp => resp.data);
 }
 
+function createLocalUser(data) {
+  const url = `${BASE_URL}/api/user`;
+  return axios.post(url, data, getHeaders()).then(resp => resp.data);
+}
+
 export {
   getConferences,
   getConference,
@@ -63,5 +68,6 @@ export {
   getMySubmissions,
   addSubmissions,
   addApprovals,
-  rejectConference
+  rejectConference,
+  createLocalUser
 };
