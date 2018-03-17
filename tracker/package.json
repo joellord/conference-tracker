@@ -16,6 +16,9 @@
   "dependencies": {
     "auth0-js": "^9.3.3",
     "axios": "^0.18.0",
+    "bootstrap": "^4.0.0",
+    "bootstrap-vue": "^2.0.0-rc.2",
+    "jquery": "^1.9.1",
     "jwt-decode": "^2.2.0",
     "vue": "^2.5.2",
     "vue-router": "^3.0.1"

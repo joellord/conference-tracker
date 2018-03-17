@@ -44,6 +44,10 @@ app.get("/api/conferences", authCheck, (req, res) => {
   knex.select().table("conferences").then(data => res.json(data));
 });
 
+app.post("/api/conference", authCheck, (req, res) => {
+  knex("conferences").insert(req.body).then(record => res.status(200).send(record)).catch(err => console.log(err));
+});
+
 app.listen(port);
 console.log(`https://${creds.DOMAIN}/.well-known/jwks.json`);
 console.log("Server ready, listening on port " + port);

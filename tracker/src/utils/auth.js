@@ -101,3 +101,8 @@ export function setIdToken() {
   const idToken = getParameterByName("id_token");
   localStorage.setItem(ID_TOKEN_KEY, idToken);
 }
+
+export function getUserParam(param) {
+  const idData = decode(getIdToken());
+  return idData[param];
+}

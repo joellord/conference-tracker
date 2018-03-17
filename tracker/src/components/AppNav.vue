@@ -1,21 +1,37 @@
 <template>
-  <nav class="navbar navbar-default">
-    <div class="navbar-header">
-      <router-link to="/" class="navbar-brand">Conference Tracking</router-link>
-    </div>
-    <ul class="nav navbar-nav navbar-right">
-      <li>
-        <button
-          class="btn btn-danger log"
-          v-show="isLoggedIn()"
-          @click="handleLogout()">Log out </button>
-        <button
-          class="btn btn-info log"
-          v-show="!isLoggedIn()"
-          @click="handleLogin()">Log In</button>
-      </li>
-    </ul>
-  </nav>
+  <b-navbar toggleable="md" type="dark" variant="info">
+
+    <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+
+    <b-navbar-brand href="#">ConfTracker</b-navbar-brand>
+
+    <b-collapse is-nav id="nav_collapse">
+
+      <b-navbar-nav>
+        <b-nav-item to="/dashboard">Conferences</b-nav-item>
+        <b-nav-item to="/meetups">Meetups</b-nav-item>
+      </b-navbar-nav>
+
+      <!-- Right aligned nav items -->
+      <b-navbar-nav class="ml-auto">
+
+        <b-nav-form>
+          <b-button size="sm" class="my-2 my-sm-0" type="button" @click="handleLogout()">Logout</b-button>
+        </b-nav-form>
+
+        <b-nav-item-dropdown right>
+          <!-- Using button-content slot -->
+          <template slot="button-content">
+            <em>User</em>
+          </template>
+          <b-dropdown-item href="#">Profile</b-dropdown-item>
+          <b-dropdown-item href="#">Signout</b-dropdown-item>
+        </b-nav-item-dropdown>
+      </b-navbar-nav>
+
+    </b-collapse>
+  </b-navbar>
+
 </template>
 
 <script>
@@ -38,11 +54,7 @@ export default {
 </script>
 
 <style scoped>
-  .navbar-right {
-    margin-right: 0px !important;
-  }
-
-  .log {
-    margin: 5px 10px 0 0;
-  }
+.navbar-brand {
+  font-weight: bold;
+}
 </style>
