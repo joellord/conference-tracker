@@ -26,7 +26,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="conference in conferences" :key="conference.conferenceId">
+            <tr v-for="conference in conferences" :key="conference._id">
               <td>
                 <a :href="conference.url" target="_blank">{{ conference.name }}</a>
               </td>
@@ -36,24 +36,24 @@
                 <b-badge pill variant="danger">{{ conference.myRejected }}</b-badge>
               </td>
               <td>
-                <span v-if="!conference.mySubmissions">N/A</span>
-                <span v-if="conference.mySubmissions > 0 && conference.mySubmissions === conference.myUndefined">Submitted</span>
-                <span v-if="conference.mySubmissions && conference.myApproved">Approved</span>
-                <span v-if="conference.mySubmissions && conference.myRejected === conference.mySubmissions">Rejected</span>
+                <span v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">N/A</span>
+                <span v-if="conference.mySubmissions > 0">Submitted</span>
+                <span v-if="conference.myApproved">Approved</span>
+                <span v-if="!conference.myApproved && conference.myRejected">Rejected</span>
               </td>
               <td>
                 <ul class="list-inline">
-                  <li class="list-inline-item" v-if="conference.mySubmissions && conference.myApproved">
+                  <li class="list-inline-item" v-if="conference.myApproved">
                     👍 (details)
                   </li>
-                  <li class="list-inline-item" v-if="conference.mySubmissions && conference.myUndefined">
-                    <router-link :to="'conferences/approved/' + conference.conferenceId">
+                  <li class="list-inline-item" v-if="conference.mySubmissions">
+                    <router-link :to="'conferences/approved/' + conference._id">
                       <b-btn variant="sm" class="btn-success">Approved</b-btn>
                     </router-link>
-                    <b-btn variant="sm" class="btn-danger" @click="rejectConference(conference.conferenceId)">Rejected</b-btn>
+                    <b-btn variant="sm" class="btn-danger" @click="rejectConference(conference._id)">Rejected</b-btn>
                   </li>
-                  <li class="list-inline-item" v-if="!conference.mySubmissions">
-                    <router-link :to="'conferences/submitted/' + conference.conferenceId">
+                  <li class="list-inline-item" v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">
+                    <router-link :to="'conferences/submitted/' + conference._id">
                       Submit
                     </router-link>
                     <span v-show="conference.cfpUrl && conference.cfpEnd > now">

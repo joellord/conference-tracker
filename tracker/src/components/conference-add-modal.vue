@@ -18,26 +18,58 @@
         </b-row>
         <b-row>
           <b-col cols="6">
-            <b-form-group label="Start Date" label-for="url">
+            <b-form-group label="Start Date" label-for="startDate">
               <b-form-input id="startDate" type="date" required placeholder="MM-DD-YYYY" v-model="conference.startDate"></b-form-input>
             </b-form-group>
           </b-col>
           <b-col cols="6">
-            <b-form-group label="End Date" label-for="url">
+            <b-form-group label="End Date" label-for="endDate">
               <b-form-input id="endDate" type="date" required placeholder="MM-DD-YYYY" v-model="conference.endDate"></b-form-input>
             </b-form-group>
           </b-col>
         </b-row>
         <b-row>
           <b-col cols="6">
-            <b-form-group label="CFP URL" label-for="url">
+            <b-form-group label="CFP URL" label-for="cfpUrl">
               <b-form-input id="cfpUrl" type="text" required placeholder="https://www.example.com" v-model="conference.cfpUrl"></b-form-input>
             </b-form-group>
           </b-col>
           <b-col cols="6">
-            <b-form-group label="CFP Close Date" label-for="url">
+            <b-form-group label="CFP Close Date" label-for="cfpDate">
               <b-form-input id="cfpDate" type="date" required placeholder="MM-DD-YYYY" v-model="conference.cfpDate"></b-form-input>
             </b-form-group>
+          </b-col>
+        </b-row>
+        <b-row>
+          <b-col cols="6">
+            <b-form-group label="City" label-for="city">
+              <b-form-input id="city" type="text" required placeholder="Ottawa" v-model="conference.city"></b-form-input>
+            </b-form-group>
+          </b-col>
+          <b-col cols="6">
+            <b-form-group label="State/Province" label-for="state">
+              <b-form-input id="state" type="text" required placeholder="ON" v-model="conference.state"></b-form-input>
+            </b-form-group>
+          </b-col>
+        </b-row>
+        <b-row>
+          <b-col cols="6">
+            <b-form-group label="Country" label-for="country">
+              <b-form-input id="country" type="text" required placeholder="Canada" v-model="conference.country"></b-form-input>
+            </b-form-group>
+          </b-col>
+          <b-col cols="6">
+
+          </b-col>
+        </b-row>
+        <b-row>
+          <b-col cols="6">
+            <b-form-group label="Twitter" label-for="twitter">
+              <b-form-input id="twitter" type="text" required placeholder="@twitter" v-model="conference.twitter"></b-form-input>
+            </b-form-group>
+          </b-col>
+          <b-col cols="6">
+
           </b-col>
         </b-row>
       </b-form>
@@ -58,7 +90,11 @@ export default {
         startDate: "",
         endDate: "",
         cfpUrl: "",
-        cfpDate: ""
+        cfpDate: "",
+        city: "",
+        state: "",
+        country: "",
+        twitter: ""
       }
     };
   },
@@ -78,6 +114,10 @@ export default {
       this.conference.endDate = "";
       this.conference.cfpUrl = "";
       this.conference.cfpDate = "";
+      this.conference.city = "";
+      this.conference.state = "";
+      this.conference.country = "";
+      this.conference.twitter = "";
     },
     handleSubmit() {
       // this.$refs.modal.hide();

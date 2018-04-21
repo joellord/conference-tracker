@@ -62,7 +62,7 @@ export default {
       });
     },
     saveApprovals() {
-      const approvals = this.talks.filter(talk => talk.approved).map(approval => approval.submissionId);
+      const approvals = this.talks.filter(talk => talk.approved).map(approval => approval._id);
       addApprovals(this.$route.params.conferenceId, approvals).then(() => this.$router.push("/conferences"));
     }
   }

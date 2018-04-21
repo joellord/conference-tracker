@@ -39,8 +39,8 @@ function addTalk(data) {
   return axios.post(url, data, getHeaders()).then(resp => resp.data);
 }
 
-function addSubmissions(data) {
-  const url = `${BASE_URL}/api/submissions`;
+function addSubmissions(conferenceId, data) {
+  const url = `${BASE_URL}/api/conference/${conferenceId}/submissions`;
   return axios.post(url, data, getHeaders()).then(resp => resp.data);
 }
 

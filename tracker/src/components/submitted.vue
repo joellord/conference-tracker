@@ -71,11 +71,10 @@ export default {
     },
     saveSubmissions() {
       const submissions = this.talks.filter(talk => talk.submitted).map((talk) => {
-        const talkId = talk.id;
-        const conferenceId = this.conference.id;
-        return { talkId, conferenceId };
+        const talkId = talk._id;
+        return { talkId };
       });
-      addSubmissions(submissions).then(() => this.$router.push("/conferences"));
+      addSubmissions(this.conference._id, submissions).then(() => this.$router.push("/conferences"));
     }
   }
 };

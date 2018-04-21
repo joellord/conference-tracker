@@ -9,6 +9,7 @@
   "author": "Joel Lord <joelphy@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "axios": "^0.18.0",
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",
     "express": "^4.16.3",
@@ -17,6 +18,7 @@
     "jwt-decode": "^2.2.0",
     "knex": "^0.14.4",
     "mysql": "^2.15.0",
-    "nodemon": "^1.17.2"
+    "nodemon": "^1.17.2",
+    "pg": "^7.4.1"
   }
 }

@@ -4,26 +4,21 @@ const jwt = require("express-jwt");
 const jwks = require("jwks-rsa");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const Knex = require("knex");
-const DB = require("./db");
 const creds = require("./credentials");
 const jwtDecode = require("jwt-decode");
+const mongoose = require("mongoose");
+const axios = require("axios");
 
-const port = 3333;
+const models = require("./schemas");
+
+const CONNECTION_STRING = creds.DB_CONN_STRING;
+const PORT = 3333;
+
+mongoose.connect(CONNECTION_STRING);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors());
-
-const knex = Knex({
-  client: "mysql",
-  connection: {
-    host: DB.HOST,
-    user: DB.USER,
-    password: DB.PASSWORD,
-    database: DB.DB_NAME
-  }
-});
 
 const authCheck = jwt({
   secret: jwks.expressJwtSecret({
@@ -46,148 +41,193 @@ const getUserId = (headers) => {
   return decoded.sub;
 };
 
+getMongoUserId = (headers) => {
+  const userId = getUserId(headers);
+  return models.User.findOne({auth0Id: userId}).then(user => user._id).catch(() => undefined);
+};
+
 app.get("/api/public", (req, res) => {
   res.json({value: "Hello"});
 });
 
 app.get("/api/conferences", authCheck, (req, res) => {
-
-  let userId = getUserId(req.headers);
-  // SELECT c.*, count(s.id) totalSubmissions,
-  //     (SELECT COUNT(su.id) FROM submissions su, talks ta
-  //      WHERE ta.id = su.talkId AND ta.userId = "google-oauth2|102260477336632272051"
-  //        AND su.conferenceId = c.id GROUP BY c.id) as mySubmissions
-  // from conferences as c left join submissions s on c.id = s.conferenceId
-  // group by c.id
-  const mySubmissions = knex("submissions AS su")
-      .count("su.id")
-      .leftJoin("talks AS ta", "su.talkId", "ta.id")
-      .where("ta.userId", userId)
-      .whereRaw("`su`.`conferenceId` = `c`.`id`")
-      .groupBy("c.id");
-  const myApproved = knex("submissions AS su")
-      .count("su.id")
-      .leftJoin("talks AS ta", "su.talkId", "ta.id")
-      .where("ta.userId", userId)
-      .where("su.approved", true)
-      .whereRaw("`su`.`conferenceId` = `c`.`id`")
-      .groupBy("c.id");
-  const myRejected = knex("submissions AS su")
-      .count("su.id")
-      .leftJoin("talks AS ta", "su.talkId", "ta.id")
-      .where("ta.userId", userId)
-      .where("su.rejected", true)
-      .whereRaw("`su`.`conferenceId` = `c`.`id`")
-      .groupBy("c.id");
-  const myUndefined = knex("submissions AS su")
-      .count("su.id")
-      .leftJoin("talks AS ta", "su.talkId", "ta.id")
-      .where("ta.userId", userId)
-      .where("su.approved", false)
-      .where("su.rejected", false)
-      .whereRaw("`su`.`conferenceId` = `c`.`id`")
-      .groupBy("c.id");
-  const outerSelect = knex("conferences AS c")
-      .select("*", "c.id AS conferenceId")
-      .count("s.id AS totalSubmissions")
-      .select(mySubmissions.as("mySubmissions"))
-      .select(myApproved.as("myApproved"))
-      .select(myRejected.as("myRejected"))
-      .select(myUndefined.as("myUndefined"))
-      .leftJoin("submissions AS s", "c.id", "s.conferenceId")
-      .groupBy("c.id");
-
-  outerSelect.then(data => res.json(data));
+  let userId;
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    return models.Conference.find({});
+  }).then(conferences => {
+    let confs = conferences.map(conference => {
+      let conf = Object.assign({}, conference.toObject());
+      conf.myApproved = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED && s.userId == userId).length;
+      conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId == userId).length;
+      conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId == userId).length;
+      return conf;
+    });
+    return confs;
+  }).then(conferences => {
+    res.json(conferences)
+  });
 });
 
 app.get("/api/conference/:id", authCheck, (req, res) => {
-  knex("conferences").where("id", req.params.id).then(data => res.json(data[0]));
+  models.Conference.findOne({_id: req.params.id}).then(conf => res.json(conf));
 });
 
 app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
-  let userId = getUserId(req.headers);
-  knex("submissions AS s")
-      .columns(["s.id AS submissionId", "t.id", "t.title"])
-      .leftJoin("talks AS t", "s.talkId", "t.id")
-      .where("t.userId", userId)
-      .where("s.conferenceId", req.params.id)
-      .then(data => res.json(data));
+  let userId;
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    return models.Conference.findOne({_id: req.params.id});
+  }).then(conference => {
+    return conference.submissions.filter(c => c.userId == userId);
+  }).then(submissions => {
+    let talkIds = submissions.map(s => s.talkId);
+    return models.Talk.find({_id: {$in: talkIds}});
+  }).then(talks => {
+    res.json(talks);
+  });
 });
 
 app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   const approvedSubmissions = req.body;
-  const userId = getUserId(req.headers);
-  const promiseArray = [
-    knex("submissions AS s")
-        .leftJoin("talks AS t", "t.id", "s.talkId")
-        .where("s.conferenceId", req.params.id)
-        .where("t.userId", userId)
-        .whereIn("s.id", approvedSubmissions)
-        .update({approved: true}),
-    knex("submissions AS s")
-        .leftJoin("talks AS t", "t.id", "s.talkId")
-        .where("s.conferenceId", req.params.id)
-        .where("t.userId", userId)
-        .whereNotIn("s.id", approvedSubmissions)
-        .update({rejected: true}),
-  ];
+  let userId;
+  let conf;
 
-  Promise.all(promiseArray).then(data => res.status(200).send(data));
+  // Zapier stuff
+  const AddToSheetUrl = "https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/?";
+  let queryParams = {};
 
-  // Approval Hooks
-  // Add to Sheet:
-  // https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/?name=conf&start=date&end=date&location=City,State,Country&speaker=name&talk=title
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    return models.Conference.findOne({_id: req.params.id});
+  }).then(conference => {
+    conference.submissions.map(c => {
+      if (c.userId == userId) {
+        if (approvedSubmissions.indexOf(c.talkId) > -1) {
+          c.status = models.const.CONF_STATUS.APPROVED;
+        } else {
+          c.status = models.const.CONF_STATUS.REJECTED;
+        }
+      }
+    });
+    return conference.save();
+  }).catch(() => console.log("Error saving approvals")).then(conference => {
+    conf = conference;
+    queryParams.conference = conference.name;
+    queryParams.start = (new Date(conference.startDate)).toDateString();
+    queryParams.end = (new Date(conference.endDate)).toDateString();
+    queryParams.twitter = conference.twitter;
+    queryParams.location = conference.city + (conference.state ? ", " + conference.state : "") + ", " + conference.country;
+    return models.Talk.find({_id: {$in: approvedSubmissions}});
+  }).then(talks => {
+    talks.map((talk, index) => {
+      queryParams[`talk${index}`] = talk.title;
+    });
+    return models.User.findOne({_id: userId});
+  }).then(user => {
+    queryParams.speaker = user.name;
+  }).then(() => {
+    let url = AddToSheetUrl + encodeURI(Object.entries(queryParams).map(i => i[0] + "=" + i[1]).join("&"));
+
+    return axios.get(url);
+  }).catch(() => console.log("Error sending to Zapier")).then(() => {
+    res.json(conf);
+  });
 });
 
 app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
-  const userId = getUserId(req.headers);
-  knex("submissions AS s")
-      .leftJoin("talks AS t", "t.id", "s.talkId")
-      .where("s.conferenceId", req.params.id)
-      .where("t.userId", userId)
-      .update({rejected: true})
-      .then(data => res.status(200).send({data}));
-});
-
-app.post("/api/conference", authCheck, (req, res) => {
-  knex("conferences").insert(req.body).then(record => res.status(200).send(record)).catch(err => console.log(err));
-});
-
-app.get("/api/talks", authCheck, (req, res) => {
-  let userId = getUserId(req.headers);
-  knex("talks").where("userId", userId).then(data => res.json(data));
-});
-
-app.post("/api/talk", authCheck, (req, res) => {
-  knex("talks").insert(req.body).then(record => res.status(200).send(record)).catch(err => console.log(err));
-});
-
-app.post("/api/submissions", authCheck, (req, res) => {
-  let promiseArray = [];
-  req.body.map((submission) => {
-    const op = knex("submissions").where({talkId: submission.talkId, conferenceId: submission.conferenceId}).then(data => {
-      if (data.length === 0) {
-        return knex("submissions").insert(submission);
+  let userId;
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    return models.Conference.findOne({_id: req.params.id});
+  }).then(conference => {
+    conference.submissions.map(c => {
+      if (c.userId == userId) {
+        c.status = models.const.CONF_STATUS.REJECTED;
       }
     });
 
-    promiseArray.push(op);
+    return conference.save();
+  }).then(conference => {
+    res.json(conference);
   });
+});
 
-  Promise.all(promiseArray).then(data => res.status(200).send(data));
+app.post("/api/conference", authCheck, (req, res) => {
+  models.Conference.create({
+    name: req.body.name,
+    startDate: new Date(req.body.startDate),
+    endDate: new Date(req.body.endDate),
+    city: req.body.city,
+    state: req.body.state,
+    country: req.body.country,
+    url: req.body.url,
+    cfpUrl: req.body.cfpUrl,
+    cfpDate: new Date(req.body.cfpDate),
+    twitter: req.body.twitter,
+  }).then(conference => {
+    res.json(conference);
+  });
+});
+
+app.get("/api/talks", authCheck, (req, res) => {
+  getMongoUserId(req.headers).then(id => {
+    return models.Talk.find({userId: id})
+  }).then(talks => {
+    res.json(talks);
+  });
+});
+
+app.post("/api/talk", authCheck, (req, res) => {
+  getMongoUserId(req.headers).then(id => {
+    return models.Talk.create({
+      title: req.body.title,
+      userId: id
+    })
+  }).then(talk => {
+    res.json(talk);
+  });
+});
+
+app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
+  let userId;
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    return models.Conference.findOne({_id: req.params.id});
+  }).then(conference => {
+    req.body.map(submission => {
+      conference.submissions.push({
+        talkId: submission.talkId,
+        userId: userId,
+        status: models.const.CONF_STATUS.NULL
+      });
+    });
+    return conference.save();
+  }).then(conference => {
+    res.json(conference);
+  });
 });
 
 app.post("/api/user", authCheck, (req, res) => {
-  const userId = getUserId(req.headers);
-  knex("users").where("id", userId).then(data => {
-    if (data.length === 0) {
-      const user = req.body;
-      user.id = userId;
-      knex("users").insert(user).then(record => res.send(200));
+  getMongoUserId(req.headers).then(id => {
+    const userData = {
+      auth0Id: getUserId(req.headers),
+      name: req.body.name,
+      picture: req.body.picture
+    };
+    if (!id) {
+      models.User.create(userData);
+    } else {
+      models.User.findOneAndUpdate({
+        _id: id
+      }, userData, { upsert: true}).then(data => {
+        res.json(data);
+      });
     }
-  })
+  });
 });
 
-app.listen(port);
-console.log(`https://${creds.DOMAIN}/.well-known/jwks.json`);
-console.log("Server ready, listening on port " + port);
+app.listen(PORT, () => {
+  console.log("Server ready, listening on port " + PORT);
+});
+
