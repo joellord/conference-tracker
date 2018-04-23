@@ -53,7 +53,7 @@ getMongoUserId = (headers) => {
   return models.User.findOne({auth0Id: userId}).then(user => user._id).catch(() => undefined);
 };
 
-app.use(express.static('dist'));
+app.use(express.static("dist"));
 
 app.get("/api/public", (req, res) => {
   res.json({value: "Hello"});
@@ -234,6 +234,10 @@ app.post("/api/user", authCheck, (req, res) => {
       });
     }
   });
+});
+
+app.get("*", (req, res) => {
+  res.sendfile(__dirname + "/index.html");
 });
 
 app.listen(PORT, () => {
