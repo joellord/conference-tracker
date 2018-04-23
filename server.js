@@ -4,14 +4,15 @@ const jwt = require("express-jwt");
 const jwks = require("jwks-rsa");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const creds = require("./credentials");
+// const creds = require("./credentials");
 const jwtDecode = require("jwt-decode");
 const mongoose = require("mongoose");
 const axios = require("axios");
 
 const models = require("./schemas");
 
-const CONNECTION_STRING = creds.DB_CONN_STRING;
+// const CONNECTION_STRING = creds.DB_CONN_STRING;
+const CONNECTION_STRING = process.env.CONNECTION_STRING;
 const PORT = 3333;
 
 mongoose.connect(CONNECTION_STRING);
