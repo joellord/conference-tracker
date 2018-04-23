@@ -14,7 +14,7 @@ const models = require("./schemas");
 const creds = process.env;
 
 const CONNECTION_STRING = creds.DB_CONN_STRING;
-const PORT = 3333;
+const PORT = process.env.PORT || 3333;
 
 mongoose.connect(CONNECTION_STRING);
 
