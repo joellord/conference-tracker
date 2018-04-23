@@ -237,7 +237,7 @@ app.post("/api/user", authCheck, (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendfile(__dirname + "/index.html");
+  res.sendfile(__dirname + "/dist/index.html");
 });
 
 app.listen(PORT, () => {
