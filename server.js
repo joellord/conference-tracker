@@ -10,10 +10,12 @@ const axios = require("axios");
 
 const models = require("./schemas");
 
+let creds;
+
 if (process.env.NODE_ENV === "prod") {
-  const creds = process.env;
+  creds = process.env;
 } else {
-  const creds = require("./credentials");
+  creds = require("./credentials");
 }
 
 const CONNECTION_STRING = creds.DB_CONN_STRING;
