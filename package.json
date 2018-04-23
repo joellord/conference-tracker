@@ -4,6 +4,7 @@
   "description": "Back end for the conference tracking tool",
   "main": "server.js",
   "scripts": {
+    "start": "node ./server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Joel Lord <joelphy@gmail.com>",
