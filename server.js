@@ -11,8 +11,9 @@ const axios = require("axios");
 
 const models = require("./schemas");
 
-// const CONNECTION_STRING = creds.DB_CONN_STRING;
-const CONNECTION_STRING = process.env.CONNECTION_STRING;
+const creds = process.env;
+
+const CONNECTION_STRING = creds.DB_CONN_STRING;
 const PORT = 3333;
 
 mongoose.connect(CONNECTION_STRING);
