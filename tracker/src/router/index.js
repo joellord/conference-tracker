@@ -2,6 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import Welcome from "@/components/welcome";
 import Conferences from "@/components/conferences";
+import ConferenceDetails from "@/components/conference-details";
 import Talks from "@/components/talks";
 import Callback from "@/components/callback";
 import Submitted from "@/components/submitted";
@@ -22,6 +23,12 @@ export default new Router({
       path: "/conferences",
       name: "Conferences",
       component: Conferences,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/conference/:conferenceId",
+      name: "ConferenceDetails",
+      component: ConferenceDetails,
       beforeEnter: requireAuth
     },
     {

@@ -79,7 +79,35 @@ app.get("/api/conferences", authCheck, (req, res) => {
 });
 
 app.get("/api/conference/:id", authCheck, (req, res) => {
-  models.Conference.findOne({_id: req.params.id}).then(conf => res.json(conf));
+  let talkIds = [];
+  let talks = {};
+  let userIds = [];
+  let users = {};
+  let conference = {};
+
+  models.Conference.findOne({_id: req.params.id}).then(conf => {
+    conference = conf;
+    conf.submissions.map((s) => {
+      if (talkIds.indexOf(s.talkId) === -1) talkIds.push(s.talkId);
+      if (userIds.indexOf(s.userId) === -1) userIds.push(s.usedId);
+    });
+    return models.User.find({"_id.$oid": {$in: userIds}});
+  }).then(data => {
+    data.map((user) => users[user._id] = user);
+    return models.Talk.find({_id: {$in: talkIds}})
+  }).then(data => {
+    data.map((talk) => talks[talk._id] = talk);
+    return conference;
+  }).then(conf => {
+    let populatedConference = Object.assign({}, conf._doc);
+    populatedConference.submissions = conference.submissions.map((s) => {
+      return Object.assign({}, s._doc,  {
+        user: users[s.userId],
+        talk: talks[s.talkId]
+      });
+    });
+    res.json(populatedConference)
+  });
 });
 
 app.get("/api/conference/:id/submissions", authCheck, (req, res) => {

@@ -28,7 +28,8 @@
           <tbody>
             <tr v-for="conference in conferences" :key="conference._id">
               <td>
-                <a :href="conference.url" target="_blank">{{ conference.name }}</a>
+                <router-link :to="'conference/' + conference._id">{{ conference.name }}</router-link>
+                <a :href="conference.url" target="_blank">🔗</a>
               </td>
               <td>
                 <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
