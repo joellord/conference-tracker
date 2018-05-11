@@ -26,7 +26,7 @@
           <tbody>
           <tr v-for="talk in talks" :key="talk.id">
             <td>
-              {{ talk.title }}
+              <router-link :to="'talk/' + talk._id">{{ talk.title }}</router-link>
             </td>
             <td>
               N/A

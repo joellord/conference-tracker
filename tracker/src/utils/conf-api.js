@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-const BASE_URL = "https://conf-tracker.herokuapp.com";
-// const BASE_URL = "http://localhost:3333";
+// const BASE_URL = "https://conf-tracker.herokuapp.com";
+const BASE_URL = "http://localhost:3333";
 
 function getHeaders() {
   const authToken = getAccessToken();
@@ -27,6 +27,16 @@ function addConference(data) {
 function getMyTalks() {
   const url = `${BASE_URL}/api/talks`;
   return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getTalkById(talkId) {
+  const url = `${BASE_URL}/api/talk/${talkId}`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function updateTalk(talkId, data) {
+  const url = `${BASE_URL}/api/talk/${talkId}`;
+  return axios.put(url, data, getHeaders()).then(resp => resp.data);
 }
 
 function getMySubmissions(conferenceId) {
@@ -70,5 +80,7 @@ export {
   addSubmissions,
   addApprovals,
   rejectConference,
-  createLocalUser
+  createLocalUser,
+  getTalkById,
+  updateTalk
 };

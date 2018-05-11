@@ -226,6 +226,18 @@ app.post("/api/talk", authCheck, (req, res) => {
   });
 });
 
+app.get("/api/talk/:id", authCheck,  (req,  res) => {
+  models.Talk.findOne({_id: req.params.id}).then(talk => {
+    res.json(talk);
+  });
+});
+
+app.put("/api/talk/:id", authCheck,  (req,  res) => {
+  models.Talk.findOneAndUpdate({_id: req.params.id}, req.body).then(talk => {
+    res.json(talk);
+  });
+});
+
 app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
   getMongoUserId(req.headers).then(id => {

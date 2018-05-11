@@ -37,6 +37,8 @@ const conferenceSchema = mongoose.Schema({
 const talkSchema = mongoose.Schema({
   title: String,
   userId: {type: ObjectId, ref: "User"},
+  abstract: String,
+  notes: String,
   last_modified: {
     type: Date,
     default: Date.now
