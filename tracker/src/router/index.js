@@ -8,6 +8,7 @@ import Callback from "@/components/callback";
 import Submitted from "@/components/submitted";
 import Approved from "@/components/approved";
 import Talk from "@/components/talk";
+import Profile from "@/components/profile";
 import { requireAuth } from "../utils/auth";
 
 Vue.use(Router);
@@ -54,6 +55,12 @@ export default new Router({
       path: "/talk/:talkId",
       name: "Talk",
       component: Talk,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/profile",
+      name: "Profile",
+      component: Profile,
       beforeEnter: requireAuth
     },
     {

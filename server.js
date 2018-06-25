@@ -257,13 +257,22 @@ app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
   });
 });
 
+app.get("/api/user", authCheck, (req, res) => {
+  getMongoUserId(req.headers).then(id => {
+    models.User.findOne({_id: id}).then(profile => {
+      res.json(profile);
+    });
+  });
+});
+
 app.post("/api/user", authCheck, (req, res) => {
   getMongoUserId(req.headers).then(id => {
     const userData = {
-      auth0Id: getUserId(req.headers),
-      name: req.body.name,
-      picture: req.body.picture
+      auth0Id: getUserId(req.headers)
     };
+    if (req.body.name) userData.name = req.body.name;
+    if (req.body.picture) userData.picture = req.body.picture;
+    if (req.body.bio) userData.bio = req.body.bio;
     if (!id) {
       models.User.create(userData);
     } else {

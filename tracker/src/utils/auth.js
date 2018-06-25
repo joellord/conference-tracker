@@ -106,3 +106,7 @@ export function getUserParam(param) {
   const idData = decode(getIdToken());
   return idData[param];
 }
+
+export function getUserImage() {
+  return getUserParam("picture");
+}

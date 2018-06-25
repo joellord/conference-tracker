@@ -7,7 +7,7 @@
 <script>
 import jwtDecode from "jwt-decode";
 import { getIdToken, setIdToken, setAccessToken } from "../utils/auth";
-import { createLocalUser } from "../utils/conf-api";
+import { saveLocalUser } from "../utils/conf-api";
 
 export default {
   name: "",
@@ -16,7 +16,7 @@ export default {
       setAccessToken();
       setIdToken();
       const user = jwtDecode(getIdToken());
-      createLocalUser({
+      saveLocalUser({
         name: user.name,
         picture: user.picture
       });

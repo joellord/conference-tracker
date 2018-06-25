@@ -9,15 +9,23 @@
 
       <b-navbar-nav>
         <b-nav-item to="/conferences">Conferences</b-nav-item>
+        <!--<b-nav-item to="/meetups">Meetups</b-nav-item>-->
         <b-nav-item to="/talks">My Talks</b-nav-item>
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->
       <b-navbar-nav class="ml-auto">
 
-        <b-nav-form>
-          <b-button size="sm" class="my-2 my-sm-0" type="button" @click="handleLogout()">Logout</b-button>
-        </b-nav-form>
+        <b-nav-item-dropdown right>
+          <!-- Using button-content slot -->
+          <template slot="button-content">
+            <img :src="getUserImage" class="profile-pic"/>
+          </template>
+          <b-dropdown-item href="/profile">
+            Profile
+          </b-dropdown-item>
+          <b-dropdown-item href="#" @click="handleLogout()">Logout</b-dropdown-item>
+        </b-nav-item-dropdown>
 
       </b-navbar-nav>
 
@@ -27,7 +35,7 @@
 </template>
 
 <script>
-import { isLoggedIn, login, logout } from "../utils/auth";
+import { isLoggedIn, getUserImage, login, logout } from "../utils/auth";
 
 export default {
   name: "app-nav",
@@ -41,6 +49,11 @@ export default {
     isLoggedIn() {
       return isLoggedIn();
     }
+  },
+  data() {
+    return {
+      getUserImage: getUserImage()
+    };
   }
 };
 </script>
@@ -48,5 +61,9 @@ export default {
 <style scoped>
 .navbar-brand {
   font-weight: bold;
+}
+.profile-pic {
+  height: 40px;
+  border-radius: 20px;
 }
 </style>

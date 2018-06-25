@@ -48,7 +48,8 @@ const talkSchema = mongoose.Schema({
 const userSchema = mongoose.Schema({
   auth0Id: String,
   name: String,
-  picture: String
+  picture: String,
+  bio: String
 });
 
 const submissionSchema = mongoose.Schema({
