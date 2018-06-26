@@ -1,8 +1,13 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-// const BASE_URL = "https://conf-tracker.herokuapp.com";
-const BASE_URL = "http://localhost:3333";
+let BASE_URL;
+
+if (process.env.NODE_ENV === "prod") {
+  BASE_URL = "https://conf-tracker.herokuapp.com";
+} else {
+  BASE_URL = "http://localhost:3333";
+}
 
 function getHeaders() {
   const authToken = getAccessToken();
