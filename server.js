@@ -90,6 +90,16 @@ app.get("/api/conferences", authCheck, (req, res) => {
   });
 });
 
+app.get("/api/conference/slk", (req, res) => {
+  const params = extractQueryParams(req.url);
+  const conferenceId = params.conference_id;
+  const slkLink = params.slk_link;
+
+  models.Conference.findOneAndUpdate({_id: conferenceId}, {slkLink}).then(conference => {
+    res.json(conference);
+  });
+});
+
 app.get("/api/conference/:id", authCheck, (req, res) => {
   let talkIds = [];
   let talks = {};
@@ -231,16 +241,6 @@ app.put("/api/conference/:id", authCheck,  (req,  res) => {
   });
 });
 
-app.get("/api/conference/slk", null, (req, res) => {
-  const params = extractQueryParams(req.url);
-  const conferenceId = params.conference_id;
-  const slkLink = params.slk_link;
-
-  models.Conference.findOneAndUpdate({_id: conferenceId}, {slkLink}).then(conference => {
-    res.json(conference);
-  });
-});
-
 app.get("/api/talks", authCheck, (req, res) => {
   getMongoUserId(req.headers).then(id => {
     return models.Talk.find({userId: id})
@@ -320,7 +320,7 @@ app.post("/api/user", authCheck, (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendfile(__dirname + "/dist/index.html");
+  res.sendFile(__dirname + "/dist/index.html");
 });
 
 app.listen(PORT, () => {
