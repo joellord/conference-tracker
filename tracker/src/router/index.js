@@ -3,6 +3,7 @@ import Router from "vue-router";
 import Welcome from "@/components/welcome";
 import Conferences from "@/components/conferences";
 import ConferenceDetails from "@/components/conference-details";
+import Upcoming from "@/components/upcoming";
 import Talks from "@/components/talks";
 import Callback from "@/components/callback";
 import Submitted from "@/components/submitted";
@@ -43,6 +44,12 @@ export default new Router({
       path: "/conferences/approved/:conferenceId",
       name: "Approved",
       component: Approved,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/upcoming",
+      name: "Upcoming",
+      component: Upcoming,
       beforeEnter: requireAuth
     },
     {

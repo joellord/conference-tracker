@@ -1,13 +1,8 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-let BASE_URL;
-
-if (process.env.NODE_ENV === "prod") {
-  BASE_URL = "https://conf-tracker.herokuapp.com";
-} else {
-  BASE_URL = "http://localhost:3333";
-}
+const BASE_URL = "https://conf-tracker.herokuapp.com";
+// const BASE_URL = "http://localhost:3333";
 
 function getHeaders() {
   const authToken = getAccessToken();
@@ -16,6 +11,11 @@ function getHeaders() {
 
 function getConferences() {
   const url = `${BASE_URL}/api/conferences`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getUpcomingConferences() {
+  const url = `${BASE_URL}/api/upcoming`;
   return axios.get(url, getHeaders()).then(resp => resp.data);
 }
 
@@ -87,6 +87,7 @@ function getLocalUser() {
 
 export {
   getConferences,
+  getUpcomingConferences,
   getConference,
   addConference,
   updateConference,

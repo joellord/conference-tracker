@@ -21,7 +21,7 @@ const conferenceSchema = mongoose.Schema({
   submissions: [
     {
       talkId: String,
-      userId: String,
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       status: {
         type: String,
         possibleValues: [CONF_STATUS.APPROVED, CONF_STATUS.REJECTED, CONF_STATUS.NULL]

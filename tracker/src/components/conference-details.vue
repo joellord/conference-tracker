@@ -27,12 +27,18 @@
         <tr>
           <th scope="col">Talk</th>
           <th scope="col">Presenter</th>
+          <th scope="col">Status</th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="submission in conference.submissions" :key="submission._id">
           <td>{{ submission.talk.title }}</td>
           <td>{{ submission.user.name }}</td>
+          <td>
+            <span v-if="submission.status === 'APPROVED'">👍</span>
+            <span v-if="submission.status === 'REJECTED'">👎</span>
+            <span v-if="submission.status === 'NULL'">❓</span>
+          </td>
         </tr>
         </tbody>
       </table>

@@ -79,14 +79,37 @@ app.get("/api/conferences", authCheck, (req, res) => {
   }).then(conferences => {
     let confs = conferences.map(conference => {
       let conf = Object.assign({}, conference.toObject());
-      conf.myApproved = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED && s.userId == userId).length;
-      conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId == userId).length;
-      conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId == userId).length;
+      conf.myApproved = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED && s.userId.toString() == userId).length;
+      conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId.toString() == userId).length;
+      conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId.toString() == userId).length;
       return conf;
     });
     return confs;
   }).then(conferences => {
     res.json(conferences)
+  });
+});
+
+app.get("/api/upcoming", (req, res) => {
+  let users = [];
+  models.Conference.find({
+      "endDate": { "$gte": new Date() },
+      "submissions.status": models.const.CONF_STATUS.APPROVED
+    })
+  .populate("submissions.userId")
+  .then(upcoming => {
+    let formatted = upcoming.map(u => {
+      let submissions = u.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED);
+      u.submissions = submissions;
+      let speakers = [];
+      submissions.map(s => {
+        if (speakers.indexOf(s.userId.name) === -1) speakers.push(s.userId.name);
+      });
+      let conference = Object.assign({}, u.toObject());
+      conference.speakers = speakers.join(" ");
+      return conference;
+    });
+    res.json(formatted);
   });
 });
 
@@ -111,9 +134,9 @@ app.get("/api/conference/:id", authCheck, (req, res) => {
     conference = conf;
     conf.submissions.map((s) => {
       if (talkIds.indexOf(s.talkId) === -1) talkIds.push(s.talkId);
-      if (userIds.indexOf(s.userId) === -1) userIds.push(s.usedId);
+      if (userIds.indexOf(s.userId.toString()) === -1) userIds.push(s.userId);
     });
-    return models.User.find({"_id.$oid": {$in: userIds}});
+    return models.User.find({"_id": {$in: userIds}});
   }).then(data => {
     data.map((user) => users[user._id] = user);
     return models.Talk.find({_id: {$in: talkIds}})
@@ -138,7 +161,7 @@ app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
     userId = id;
     return models.Conference.findOne({_id: req.params.id});
   }).then(conference => {
-    return conference.submissions.filter(c => c.userId == userId);
+    return conference.submissions.filter(c => c.userId.toString() == userId);
   }).then(submissions => {
     let talkIds = submissions.map(s => s.talkId);
     return models.Talk.find({_id: {$in: talkIds}});
@@ -160,7 +183,7 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     return models.Conference.findOne({_id: req.params.id});
   }).then(conference => {
     conference.submissions.map(c => {
-      if (c.userId == userId) {
+      if (c.userId.toString() == userId) {
         if (approvedSubmissions.indexOf(c.talkId) > -1) {
           c.status = models.const.CONF_STATUS.APPROVED;
         } else {
@@ -207,7 +230,7 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
     return models.Conference.findOne({_id: req.params.id});
   }).then(conference => {
     conference.submissions.map(c => {
-      if (c.userId == userId) {
+      if (c.userId.toString() == userId) {
         c.status = models.const.CONF_STATUS.REJECTED;
       }
     });
