@@ -49,12 +49,12 @@ const getUserId = (headers) => {
   return decoded.sub;
 };
 
-getMongoUserId = (headers) => {
+const getMongoUserId = (headers) => {
   const userId = getUserId(headers);
   return models.User.findOne({auth0Id: userId}).then(user => user._id).catch(() => undefined);
 };
 
-extractQueryParams = (url) => {
+const extractQueryParams = (url) => {
   const queryString = url.split("?")[1];
   const items = queryString.split("&");
   let params = {};
@@ -231,12 +231,12 @@ app.put("/api/conference/:id", authCheck,  (req,  res) => {
   });
 });
 
-app.get("/api/conference/slk", (req, res) => {
+app.get("/api/conference/slk", null, (req, res) => {
   const params = extractQueryParams(req.url);
   const conferenceId = params.conference_id;
   const slkLink = params.slk_link;
 
-  models.Conference.findOneAndUpdate({_id: params.conferenceId}, {slkLink}).then(conference => {
+  models.Conference.findOneAndUpdate({_id: conferenceId}, {slkLink}).then(conference => {
     res.json(conference);
   });
 });
