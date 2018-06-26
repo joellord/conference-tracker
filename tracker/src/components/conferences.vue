@@ -45,7 +45,7 @@
               <td>
                 <ul class="list-inline">
                   <li class="list-inline-item" v-if="conference.myApproved">
-                    👍 (details)
+                    👍 (<a :href="conference.slkLink" target="_blank">SLK</a> )
                   </li>
                   <li class="list-inline-item" v-if="conference.mySubmissions">
                     <router-link :to="'conferences/approved/' + conference._id">

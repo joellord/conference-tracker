@@ -28,6 +28,10 @@ const conferenceSchema = mongoose.Schema({
       }
     }
   ],
+  overview: String,
+  relationshipGoal: Number,
+  attendeeGoal: Number,
+  slkLink: String,
   last_modified: {
     type: Date,
     default: Date.now

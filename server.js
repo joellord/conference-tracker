@@ -8,7 +8,8 @@ const jwtDecode = require("jwt-decode");
 const mongoose = require("mongoose");
 const axios = require("axios");
 
-const models = require("./schemas");
+const models = require("./server-utils/schemas");
+const zapier = require("./server-utils/zapier");
 
 let creds;
 
@@ -51,6 +52,17 @@ const getUserId = (headers) => {
 getMongoUserId = (headers) => {
   const userId = getUserId(headers);
   return models.User.findOne({auth0Id: userId}).then(user => user._id).catch(() => undefined);
+};
+
+extractQueryParams = (url) => {
+  const queryString = url.split("?")[1];
+  const items = queryString.split("&");
+  let params = {};
+  for (let i = 0; i < items.length; i++) {
+    let splittedItems = items[i].split("=");
+    params[splittedItems[0]] = decodeURIComponent(splittedItems[1]);
+  }
+  return params;
 };
 
 app.use(express.static("dist"));
@@ -131,8 +143,7 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   let conf;
 
   // Zapier stuff
-  const AddToSheetUrl = "https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/?";
-  let queryParams = {};
+  let zapierParams = {};
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
@@ -150,24 +161,31 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     return conference.save();
   }).catch(() => console.log("Error saving approvals")).then(conference => {
     conf = conference;
-    queryParams.conference = conference.name;
-    queryParams.start = (new Date(conference.startDate)).toDateString();
-    queryParams.end = (new Date(conference.endDate)).toDateString();
-    queryParams.twitter = conference.twitter;
-    queryParams.location = conference.city + (conference.state ? ", " + conference.state : "") + ", " + conference.country;
+    zapierParams.conferenceId = conference._id;
+    zapierParams.conference = conference.name;
+    zapierParams.start = (new Date(conference.startDate)).toDateString();
+    zapierParams.end = (new Date(conference.endDate)).toDateString();
+    zapierParams.dates = conference.endDate ? `${zapierParams.start} to ${zapierParams.end}` : zapierParams.start;
+    zapierParams.twitter = conference.twitter;
+    zapierParams.website = conference.url;
+    zapierParams.location = conference.city + (conference.state ? ", " + conference.state : "") + ", " + conference.country;
+    zapierParams.talks = "";
+    zapierParams.overview = conference.overview;
+    zapierParams.attendeeGoal = conference.attendeeGoal;
+    zapierParams.relationshipGoal = conference.relationshipGoal;
     return models.Talk.find({_id: {$in: approvedSubmissions}});
   }).then(talks => {
     talks.map((talk, index) => {
-      queryParams[`talk${index}`] = talk.title;
+      zapierParams[`talk${index}`] = talk.title;
+      zapierParams.talks += talk.title + "\r\n";
     });
+    zapierParams.talks = zapierParams.talks.substr(0, zapierParams.talks.length - 2);
     return models.User.findOne({_id: userId});
   }).then(user => {
-    queryParams.speaker = user.name;
+    zapierParams.speaker = user.name;
   }).then(() => {
-    let url = AddToSheetUrl + encodeURI(Object.entries(queryParams).map(i => i[0] + "=" + i[1]).join("&"));
-
-    return axios.get(url);
-  }).catch(() => console.log("Error sending to Zapier")).then(() => {
+    return zapier.approved(zapierParams);
+  }).catch((err) => console.log("Error sending to Zapier", err)).then(() => {
     res.json(conf);
   });
 });
@@ -203,6 +221,22 @@ app.post("/api/conference", authCheck, (req, res) => {
     cfpDate: new Date(req.body.cfpDate),
     twitter: req.body.twitter,
   }).then(conference => {
+    res.json(conference);
+  });
+});
+
+app.put("/api/conference/:id", authCheck,  (req,  res) => {
+  models.Conference.findOneAndUpdate({_id: req.params.id}, req.body).then(conference => {
+    res.json(conference);
+  });
+});
+
+app.get("/api/conference/slk", (req, res) => {
+  const params = extractQueryParams(req.url);
+  const conferenceId = params.conference_id;
+  const slkLink = params.slk_link;
+
+  models.Conference.findOneAndUpdate({_id: params.conferenceId}, {slkLink}).then(conference => {
     res.json(conference);
   });
 });
