@@ -1,7 +1,14 @@
 const axios = require("axios");
 const Pageres = require("pageres");
-const cloudinary = require('cloudinary');
-const creds = require("../credentials");
+const cloudinary = require("cloudinary");
+
+let creds;
+
+if (process.env.NODE_ENV === "prod") {
+  creds = process.env;
+} else {
+  creds = require("../credentials");
+}
 
 const URL = {
   addConferenceToSheet: "https://hooks.zapier.com/hooks/catch/3069472/w12ikq/",
