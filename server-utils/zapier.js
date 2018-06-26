@@ -12,7 +12,9 @@ if (process.env.NODE_ENV === "prod") {
 
 const URL = {
   addConferenceToSheet: "https://hooks.zapier.com/hooks/catch/3069472/w12ikq/",
-  createSLK: "https://hooks.zapier.com/hooks/catch/3069472/w14rak/"
+  createSLK: "https://hooks.zapier.com/hooks/catch/3069472/w14rak/",
+  sendSlackMessage: "https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/",
+  addToEvangelistCalendar: "https://hooks.zapier.com/hooks/catch/3069472/ks3xs7/"
 };
 
 function buildUrl(url, params) {
@@ -27,7 +29,9 @@ Zapier = {
   approved: (data) => {
     let promiseArray = [
       Zapier.addConferenceToSheet(data),
-      Zapier.createSLK(data)
+      Zapier.createSLK(data),
+      Zapier.sendSlackMessage(data),
+      Zapier.addToEvangelistCalendar(data)
     ];
 
     Promise.all(promiseArray).then(data => {
@@ -68,6 +72,18 @@ Zapier = {
       return axios.get(url);
     }).catch(err => {
       console.log("Error creating SLK", err);
+    });
+  },
+  sendSlackMessage: (data) => {
+    let url = buildUrl(URL.sendSlackMessage, data);
+    return axios.get(url).catch(err => {
+      console.log("Error sending message on Slack", err);
+    });
+  },
+  addToEvangelistCalendar: (data) => {
+    let url = buildUrl(URL.addToEvangelistCalendar, data);
+    return axios.get(url).catch(err => {
+      console.log("Error adding to calendar", err);
     });
   }
 };
