@@ -29,11 +29,11 @@ function buildUrl(url, params) {
 Zapier = {
   approved: (data) => {
     let promiseArray = [
-      // Zapier.addConferenceToSheet(data),
-      // Zapier.createSLK(data),
-      // Zapier.sendSlackMessage(data),
-      // Zapier.addToEvangelistCalendar(data),
-        Zapier.addToTrello(data)
+      Zapier.addConferenceToSheet(data),
+      Zapier.createSLK(data),
+      Zapier.sendSlackMessage(data),
+      Zapier.addToEvangelistCalendar(data),
+      Zapier.addToTrello(data)
     ];
 
     Promise.all(promiseArray).then(data => {
