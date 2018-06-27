@@ -53,6 +53,7 @@ Zapier = {
       .dest(__dirname + "/tmp")
       .run();
     return pageres.then(data => {
+      console.log("We got a screenshot");
       //Upload to cloudinary
       cloudinary.config({
         cloud_name: creds.CLOUDINARY.CLOUD_NAME,
@@ -67,10 +68,12 @@ Zapier = {
         });
       });
     }).then(result => {
+      console.log("Sent to Cloudinary");
       // Add image URL
       data.image = result.secure_url;
     }).then(() => {
       let url = buildUrl(URL.createSLK, data);
+      console.log("Sending to Zapier", url);
       return axios.get(url);
     }).catch(err => {
       console.log("Error creating SLK", err);
