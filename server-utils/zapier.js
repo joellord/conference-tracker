@@ -56,9 +56,9 @@ Zapier = {
       console.log("We got a screenshot");
       //Upload to cloudinary
       cloudinary.config({
-        cloud_name: creds.CLOUDINARY.CLOUD_NAME,
-        api_key: creds.CLOUDINARY.API_KEY,
-        api_secret: creds.CLOUDINARY.API_SECRET
+        cloud_name: creds.CLOUDINARY_CLOUD_NAME,
+        api_key: creds.CLOUDINARY_API_KEY,
+        api_secret: creds.CLOUDINARY_API_SECRET
       });
 
       return new Promise((resolve, reject) => {
