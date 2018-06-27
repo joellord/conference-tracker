@@ -14,7 +14,8 @@ const URL = {
   addConferenceToSheet: "https://hooks.zapier.com/hooks/catch/3069472/w12ikq/",
   createSLK: "https://hooks.zapier.com/hooks/catch/3069472/w14rak/",
   sendSlackMessage: "https://hooks.zapier.com/hooks/catch/3069472/kiv6sa/",
-  addToEvangelistCalendar: "https://hooks.zapier.com/hooks/catch/3069472/ks3xs7/"
+  addToEvangelistCalendar: "https://hooks.zapier.com/hooks/catch/3069472/ks3xs7/",
+  addToTrello: "https://hooks.zapier.com/hooks/catch/3069472/w59cdi/"
 };
 
 function buildUrl(url, params) {
@@ -28,10 +29,11 @@ function buildUrl(url, params) {
 Zapier = {
   approved: (data) => {
     let promiseArray = [
-      Zapier.addConferenceToSheet(data),
-      Zapier.createSLK(data),
-      Zapier.sendSlackMessage(data),
-      Zapier.addToEvangelistCalendar(data)
+      // Zapier.addConferenceToSheet(data),
+      // Zapier.createSLK(data),
+      // Zapier.sendSlackMessage(data),
+      // Zapier.addToEvangelistCalendar(data),
+        Zapier.addToTrello(data)
     ];
 
     Promise.all(promiseArray).then(data => {
@@ -84,6 +86,12 @@ Zapier = {
     let url = buildUrl(URL.addToEvangelistCalendar, data);
     return axios.get(url).catch(err => {
       console.log("Error adding to calendar", err);
+    });
+  },
+  addToTrello: (data) => {
+    let url = buildUrl(URL.addToTrello, data);
+    return axios.get(url).catch(err => {
+      console.log("Error adding to Trello", err);
     });
   }
 };

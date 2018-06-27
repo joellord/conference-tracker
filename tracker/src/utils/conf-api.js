@@ -1,12 +1,21 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-const BASE_URL = "https://conf-tracker.herokuapp.com";
-// const BASE_URL = "http://localhost:3333";
+// const BASE_URL = "https://conf-tracker.herokuapp.com";
+const BASE_URL = "http://localhost:3333";
+
+// let DB = "production";
+// let ZAPIER = true;
 
 function getHeaders() {
   const authToken = getAccessToken();
-  return authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : { headers: {} };
+  return {
+    headers: {
+      database: "production",
+      zapier: true,
+      Authorization: authToken ? `Bearer ${authToken}` : undefined
+    }
+  };
 }
 
 function getConferences() {
