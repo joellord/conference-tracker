@@ -6,6 +6,12 @@ const CONF_STATUS = {
   REJECTED: "REJECTED",
   NULL: "NULL"
 };
+const MEETUP_STATUS = {
+  APPLIED: "APPLIED",
+  CONFIRMED: "CONFIRMED",
+  REJECTED: "REJECTED",
+  DROPPED: "DROPPED"
+};
 
 const conferenceSchema = mongoose.Schema({
   name: String,
@@ -24,7 +30,7 @@ const conferenceSchema = mongoose.Schema({
       userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       status: {
         type: String,
-        possibleValues: [CONF_STATUS.APPROVED, CONF_STATUS.REJECTED, CONF_STATUS.NULL]
+        possibleValues: CONF_STATUS
       }
     }
   ],
@@ -62,13 +68,31 @@ const submissionSchema = mongoose.Schema({
   conferenceId: ObjectId
 });
 
+const meetupSchema = mongoose.Schema({
+  meetupUrlName: String,
+  suggestedDateStart: Date,
+  suggestedDateEnd: Date,
+  name: String,
+  location: String,
+  status: {
+    type: String,
+    possibleValues: MEETUP_STATUS
+  },
+  startDate: Date,
+  attendeeGoal: Number,
+  talkId: { type: mongoose.Schema.Types.ObjectId, ref: "Talk" },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+});
+
 Models = {
   Conference: mongoose.model("Conference", conferenceSchema),
   Talk: mongoose.model("Talk", talkSchema),
   User: mongoose.model("User", userSchema),
   Submission: mongoose.model("Submission", submissionSchema),
+  Meetup: mongoose.model("Meetup", meetupSchema),
   const: {
-    CONF_STATUS
+    CONF_STATUS,
+    MEETUP_STATUS
   }
 };
 

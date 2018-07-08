@@ -342,6 +342,87 @@ app.post("/api/user", authCheck, (req, res) => {
   });
 });
 
+app.get("/api/meetups", authCheck, (req, res) => {
+  getMongoUserId(req.headers).then(id => {
+    return models.Meetup.find({userId: id, status: {$in: [models.const.MEETUP_STATUS.APPLIED, models.const.MEETUP_STATUS.CONFIRMED]}}).populate("userId");
+  }).then(meetups => {
+    res.json(meetups);
+  });
+});
+
+app.get("/api/meetup/:meetupId", authCheck, (req, res) => {
+  models.Meetup.findOne({_id: req.params.meetupId}).then(meetup => {
+    res.json(meetup);
+  });
+});
+
+app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
+  let userId;
+  let zapierParams = {};
+  let meetup = {};
+
+  getMongoUserId(req.headers).then(id => {
+    userId = id;
+    req.body.status = models.const.MEETUP_STATUS.CONFIRMED;
+    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body).populate("Talk");
+  }).then(m => {
+    meetup = m;
+    zapierParams.meetupId = meetup._id;
+    zapierParams.conference = meetup.name;
+    zapierParams.start = (new Date(meetup.startDate)).toDateString();
+    zapierParams.dates = zapierParams.start;
+    zapierParams.website = `https://meetup.com/${meetup.urlname}`;
+    zapierParams.location = meetup.location;
+    zapierParams.attendeeGoal = meetup.attendeeGoal;
+
+    return models.Talk.findOne({_id: meetup.talkId});
+  }).then(talk => {
+    zapierParams.talks = talk.title;
+
+    return models.User.findOne({_id: userId});
+  }).then(user => {
+    zapierParams.speaker = user.name;
+
+    return zapierParams;
+  }).then(params => {
+    Zapier.meetupApproved(params);
+  }).then(() => {
+    res.json(meetup);
+  });
+});
+
+app.post("/api/meetup/applied", authCheck, (req, res) => {
+  getMongoUserId(req.headers).then(id => {
+    return models.Meetup.create({
+      meetupUrlName: req.body.meetupUrlName,
+      suggestedDateStart: new Date(req.body.suggestedDateStart),
+      suggestedDateEnd: new Date(req.body.suggestedDateEnd),
+      confirmedDate: null,
+      name: req.body.name,
+      location: req.body.location,
+      status: models.const.MEETUP_STATUS.APPLIED,
+      userId: id
+    });
+  }).then(meetup => {
+    res.json(meetup);
+  });
+});
+
+app.post("/api/meetup/rejected/:id", authCheck, (req, res) => {
+  models.Meetup.findOneAndUpdate({
+    _id: req.params.id
+  }, {
+    status: models.const.MEETUP_STATUS.REJECTED
+  }).then(data => res.json(data));
+});
+
+app.post("/api/meetup/dropped/:id", authCheck, (req, res) => {
+  models.Meetup.findOneAndUpdate({
+    _id: req.params.id
+  }, {
+    status: models.const.MEETUP_STATUS.DROPPED
+  }).then(data => res.json(data));});
+
 app.get("*", (req, res) => {
   res.sendFile(__dirname + "/dist/index.html");
 });

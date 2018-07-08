@@ -4,15 +4,10 @@ import { getAccessToken, getUserParam } from "./auth";
 // const BASE_URL = "https://conf-tracker.herokuapp.com";
 const BASE_URL = "http://localhost:3333";
 
-// let DB = "production";
-// let ZAPIER = true;
-
 function getHeaders() {
   const authToken = getAccessToken();
   return {
     headers: {
-      database: "production",
-      zapier: true,
       Authorization: authToken ? `Bearer ${authToken}` : undefined
     }
   };
@@ -94,6 +89,44 @@ function getLocalUser() {
   return axios.get(url, getHeaders()).then(resp => resp.data);
 }
 
+function getMeetups() {
+  const url = `${BASE_URL}/api/meetups`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getMeetup(id) {
+  const url = `${BASE_URL}/api/meetup/${id}`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function applyMeetup(meetup, start, end) {
+  const data = {
+    meetupUrlName: meetup.urlname,
+    suggestedDateStart: start,
+    suggestedDateEnd: end,
+    name: meetup.name,
+    location: meetup.localized_location
+  };
+  const url = `${BASE_URL}/api/meetup/applied`;
+  return axios.post(url, data, getHeaders()).then(resp => resp.data);
+}
+
+function droppedMeetup(id) {
+  const url = `${BASE_URL}/api/meetup/dropped/${id}`;
+  return axios.post(url, {}, getHeaders()).then(resp => resp.data);
+}
+
+function rejectedMeetup(id) {
+  const url = `${BASE_URL}/api/meetup/rejected/${id}`;
+  return axios.post(url, {}, getHeaders()).then(resp => resp.data);
+}
+
+function confirmMeetup(id, data) {
+  const url = `${BASE_URL}/api/meetup/approved/${id}`;
+  data.startDate = new Date(data.startDate);
+  return axios.put(url, data, getHeaders()).then(resp => resp.data);
+}
+
 export {
   getConferences,
   getUpcomingConferences,
@@ -109,5 +142,11 @@ export {
   saveLocalUser,
   getLocalUser,
   getTalkById,
-  updateTalk
+  updateTalk,
+  getMeetups,
+  getMeetup,
+  applyMeetup,
+  droppedMeetup,
+  rejectedMeetup,
+  confirmMeetup
 };

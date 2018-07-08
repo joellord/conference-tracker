@@ -12,7 +12,7 @@
       </b-col>
     </b-row>
 
-    <b-row><b-col></b-col></b-row>
+    <b-row><b-col>&nbsp;</b-col></b-row>
 
     <b-row>
       <b-col>

@@ -9,6 +9,10 @@ import Callback from "@/components/callback";
 import Submitted from "@/components/submitted";
 import Approved from "@/components/approved";
 import Talk from "@/components/talk";
+import Meetups from "@/components/meetups";
+import MeetupsFind from "@/components/meetups-find";
+import MeetupsApplied from "@/components/meetups-applied";
+import MeetupsAccepted from "@/components/meetups-accepted";
 import Profile from "@/components/profile";
 import { requireAuth } from "../utils/auth";
 
@@ -68,6 +72,30 @@ export default new Router({
       path: "/profile",
       name: "Profile",
       component: Profile,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/meetups",
+      name: "Meetups",
+      component: Meetups,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/meetups/find",
+      name: "MeetupFind",
+      component: MeetupsFind,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/meetups/applied/:urlname",
+      name: "MeetupsApplied",
+      component: MeetupsApplied,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/meetups/accepted/:meetupId",
+      name: "MeetupsAccepted",
+      component: MeetupsAccepted,
       beforeEnter: requireAuth
     },
     {
