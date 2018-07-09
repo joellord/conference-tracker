@@ -92,13 +92,15 @@ app.get("/api/conferences", authCheck, (req, res) => {
 
 app.get("/api/upcoming", (req, res) => {
   let users = [];
+  let formatted = [];
+
   models.Conference.find({
       "endDate": { "$gte": new Date() },
       "submissions.status": models.const.CONF_STATUS.APPROVED
     })
   .populate("submissions.userId")
   .then(upcoming => {
-    let formatted = upcoming.map(u => {
+    formatted = upcoming.map(u => {
       let submissions = u.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED);
       u.submissions = submissions;
       let speakers = [];
@@ -107,8 +109,29 @@ app.get("/api/upcoming", (req, res) => {
       });
       let conference = Object.assign({}, u.toObject());
       conference.speakers = speakers.join(" ");
+      conference.type = "CONFERENCE";
       return conference;
     });
+
+    return models.Meetup.find({
+      "startDate": { "$gte": new Date() },
+      "status": models.const.MEETUP_STATUS.CONFIRMED
+    }).populate("userId");
+  }).then(meetups => {
+    meetups.map(m => {
+      let meetup = Object.assign({}, m.toObject());
+      meetup.speakers = m.userId.name;
+      meetup.url = `https://www.meetup.com/${m.meetupUrlName}`;
+      meetup.type = "MEETUP";
+      formatted.push(meetup);
+    });
+
+    formatted = formatted.sort((a, b) => {
+      let dateA = (new Date(a.startDate)).getTime();
+      let dateB = (new Date(b.startDate)).getTime();
+      return dateA > dateB ? 1 : -1;
+    });
+
     res.json(formatted);
   });
 });
