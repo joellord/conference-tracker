@@ -20,7 +20,7 @@ export default {
         name: user.name,
         picture: user.picture
       }).then(() => {
-        window.location.href = "/conferences";
+        window.location.href = "/upcoming";
       });
     });
   }

@@ -20,7 +20,6 @@
           <thead class="thead-dark">
             <tr>
               <th scope="col">Conference Name</th>
-              <th scope="col">Submitted<br/>Approved<br/>Rejected</th>
               <th scope="col">Dates</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
@@ -31,11 +30,6 @@
               <td>
                 <router-link :to="'conference/' + conference._id">{{ conference.name }}</router-link>
                 <a :href="conference.url" target="_blank">🔗</a>
-              </td>
-              <td>
-                <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
-                <b-badge pill variant="success">{{ conference.myApproved }}</b-badge>
-                <b-badge pill variant="danger">{{ conference.myRejected }}</b-badge>
               </td>
               <td>
                 {{ dateFormat(conference.startDate) }}
