@@ -13,6 +13,7 @@ import Meetups from "@/components/meetups";
 import MeetupsFind from "@/components/meetups-find";
 import MeetupsApplied from "@/components/meetups-applied";
 import MeetupsAccepted from "@/components/meetups-accepted";
+import MeetupDetails from "@/components/meetup-details";
 import Profile from "@/components/profile";
 import { requireAuth } from "../utils/auth";
 
@@ -96,6 +97,12 @@ export default new Router({
       path: "/meetups/accepted/:meetupId",
       name: "MeetupsAccepted",
       component: MeetupsAccepted,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/meetup/:meetupId",
+      name: "MeetupDetails",
+      component: MeetupDetails,
       beforeEnter: requireAuth
     },
     {

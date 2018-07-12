@@ -381,7 +381,9 @@ app.get("/api/meetups", authCheck, (req, res) => {
 });
 
 app.get("/api/meetup/:meetupId", authCheck, (req, res) => {
-  models.Meetup.findOne({_id: req.params.meetupId}).then(meetup => {
+  models.Meetup.findOne({_id: req.params.meetupId})
+  .populate("userId").populate("talkId")
+  .then(meetup => {
     res.json(meetup);
   });
 });
