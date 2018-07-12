@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-const BASE_URL = "https://conf-tracker.herokuapp.com";
-// const BASE_URL = "http://localhost:3333";
+// const BASE_URL = "https://conf-tracker.herokuapp.com";
+const BASE_URL = "http://localhost:3333";
 
 function getHeaders() {
   const authToken = getAccessToken();
@@ -16,6 +16,13 @@ function getHeaders() {
 function getConferences() {
   const url = `${BASE_URL}/api/conferences`;
   return axios.get(url, getHeaders()).then(resp => resp.data);
+  // return axios.get(url, getHeaders()).then((resp) => {
+  // const sorted = resp.data.sort((a, b) => {
+  //   if (a.startDate > b.startDate) return -1;
+  //   return 1;
+  // });
+  // return sorted;
+  // });
 }
 
 function getUpcomingConferences() {

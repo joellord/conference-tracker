@@ -21,6 +21,7 @@
             <tr>
               <th scope="col">Conference Name</th>
               <th scope="col">Submitted<br/>Approved<br/>Rejected</th>
+              <th scope="col">Dates</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
@@ -35,6 +36,10 @@
                 <b-badge pill variant="light">{{ conference.mySubmissions }}</b-badge>
                 <b-badge pill variant="success">{{ conference.myApproved }}</b-badge>
                 <b-badge pill variant="danger">{{ conference.myRejected }}</b-badge>
+              </td>
+              <td>
+                {{ dateFormat(conference.startDate) }}
+                <span v-if="conference.endDate != conference.startDate">to {{ dateFormat(conference.endDate) }}</span>
               </td>
               <td>
                 <span v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">N/A</span>
@@ -75,6 +80,7 @@
 import AppNav from "./AppNav";
 import ConferenceAddModal from "./conference-add-modal";
 import { getConferences, rejectConference } from "../utils/conf-api";
+import { dateFormat } from "../utils/helpers";
 
 export default {
   components: { AppNav, ConferenceAddModal },
@@ -89,6 +95,9 @@ export default {
     this.getConferences();
   },
   methods: {
+    dateFormat(d) {
+      return dateFormat(d);
+    },
     getConferences() {
       getConferences().then((conferences) => {
         this.conferences = conferences;

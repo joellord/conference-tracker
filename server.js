@@ -10,6 +10,7 @@ const axios = require("axios");
 
 const models = require("./server-utils/schemas");
 const zapier = require("./server-utils/zapier");
+const helpers = require("./server-utils/helpers");
 
 let creds;
 
@@ -75,7 +76,7 @@ app.get("/api/conferences", authCheck, (req, res) => {
   let userId;
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.find({});
+    return models.Conference.find({"startDate": { "$gte": new Date() }});
   }).then(conferences => {
     let confs = conferences.map(conference => {
       let conf = Object.assign({}, conference.toObject());
@@ -86,6 +87,12 @@ app.get("/api/conferences", authCheck, (req, res) => {
     });
     return confs;
   }).then(conferences => {
+
+    conferences = conferences.sort((a, b) => {
+      if (a.startDate < b.startDate) return -1;
+      return 1;
+    });
+
     res.json(conferences)
   });
 });
@@ -219,8 +226,8 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     conf = conference;
     zapierParams.conferenceId = conference._id;
     zapierParams.conference = conference.name;
-    zapierParams.start = (new Date(conference.startDate)).toDateString();
-    zapierParams.end = (new Date(conference.endDate)).toDateString();
+    zapierParams.start = helpers.dateFormat(conference.startDate);
+    zapierParams.end = helpers.dateFormat(conference.endDate);
     zapierParams.dates = conference.endDate ? `${zapierParams.start} to ${zapierParams.end}` : zapierParams.start;
     zapierParams.twitter = conference.twitter;
     zapierParams.website = conference.url;
@@ -392,7 +399,7 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     meetup = m;
     zapierParams.meetupId = meetup._id;
     zapierParams.conference = meetup.name;
-    zapierParams.start = (new Date(meetup.startDate)).toDateString();
+    zapierParams.start = helpers.dateFormat(meetup.startDate);
     zapierParams.dates = zapierParams.start;
     zapierParams.website = `https://meetup.com/${meetup.urlname}`;
     zapierParams.location = meetup.location;
