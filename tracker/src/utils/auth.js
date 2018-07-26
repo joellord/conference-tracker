@@ -18,6 +18,13 @@ const auth = new auth0.WebAuth({
   domain: CLIENT_DOMAIN
 });
 
+const tokens = {};
+const tokenStorage = {
+  removeItem: (key) => { tokens[key] = ""; },
+  getItem: key => tokens[key],
+  setItem: (key, value) => { tokens[key] = value; }
+};
+
 export function login() {
   auth.authorize({
     responseType: "token id_token",
@@ -32,11 +39,11 @@ const router = new Router({
 });
 
 function clearIdToken() {
-  localStorage.removeItem(ID_TOKEN_KEY);
+  tokenStorage.removeItem(ID_TOKEN_KEY);
 }
 
 function clearAccessToken() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  tokenStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
 export function logout() {
@@ -46,7 +53,7 @@ export function logout() {
 }
 
 export function getIdToken() {
-  return localStorage.getItem(ID_TOKEN_KEY);
+  return tokenStorage.getItem(ID_TOKEN_KEY);
 }
 
 function getTokenExpirationDate(encodedToken) {
@@ -81,7 +88,7 @@ export function requireAuth(to, from, next) {
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return tokenStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 // Helper function that will allow us to extract the access_token and id_token
@@ -93,13 +100,13 @@ function getParameterByName(name) {
 // Get and store access_token in local storage
 export function setAccessToken() {
   const accessToken = getParameterByName("access_token");
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
 }
 
 // Get and store id_token in local storage
 export function setIdToken() {
   const idToken = getParameterByName("id_token");
-  localStorage.setItem(ID_TOKEN_KEY, idToken);
+  tokenStorage.setItem(ID_TOKEN_KEY, idToken);
 }
 
 export function getUserParam(param) {
