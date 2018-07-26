@@ -1,6 +1,5 @@
 import decode from "jwt-decode";
 import auth0 from "auth0-js";
-import Router from "vue-router";
 
 import creds from "./credentials";
 
@@ -8,14 +7,18 @@ const ID_TOKEN_KEY = "id_token";
 const ACCESS_TOKEN_KEY = "access_token";
 
 const CLIENT_ID = creds.CLIENT_ID;
-const CLIENT_DOMAIN = creds.DOMAIN;
+const DOMAIN = creds.DOMAIN;
 const REDIRECT = creds.REDIRECT;
 const SCOPE = creds.SCOPE;
 const AUDIENCE = creds.AUDIENCE;
 
 const auth = new auth0.WebAuth({
   clientID: CLIENT_ID,
-  domain: CLIENT_DOMAIN
+  domain: DOMAIN,
+  responseType: "token id_token",
+  redirectUri: REDIRECT,
+  audience: AUDIENCE,
+  scope: SCOPE
 });
 
 const tokens = {};
@@ -25,18 +28,11 @@ const tokenStorage = {
   setItem: (key, value) => { tokens[key] = value; }
 };
 
-export function login() {
-  auth.authorize({
-    responseType: "token id_token",
-    redirectUri: REDIRECT,
-    audience: AUDIENCE,
-    scope: SCOPE
-  });
-}
+let tokenRenewalTimeout;
 
-const router = new Router({
-  mode: "history"
-});
+export function login() {
+  auth.authorize({});
+}
 
 function clearIdToken() {
   tokenStorage.removeItem(ID_TOKEN_KEY);
@@ -49,7 +45,11 @@ function clearAccessToken() {
 export function logout() {
   clearIdToken();
   clearAccessToken();
-  router.go("/");
+  clearTimeout(tokenRenewalTimeout);
+
+  auth.logout({
+    returnTo: `${location.origin}/`
+  });
 }
 
 export function getIdToken() {
@@ -97,10 +97,37 @@ function getParameterByName(name) {
   return match && decodeURIComponent(match[1].replace(/\+/g, " "));
 }
 
+export function renewToken(cb) {
+  auth.checkSession({}, (err, result) => {
+    if (err) {
+      return;
+    }
+    tokenStorage.setItem(ID_TOKEN_KEY, result.idToken);
+    tokenStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
+
+    if (cb) {
+      cb();
+    }
+  });
+}
+
+export function autoRenew() {
+  const decoded = decode(tokenStorage.getItem(ACCESS_TOKEN_KEY));
+  const expiry = decoded.exp * 1000;
+  const delay = expiry - new Date();
+
+  // Schedule an auto renew, one minute before expiry
+  tokenRenewalTimeout = setTimeout(() => {
+    renewToken();
+    autoRenew();
+  }, delay - 60000);
+}
+
 // Get and store access_token in local storage
 export function setAccessToken() {
   const accessToken = getParameterByName("access_token");
   tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  autoRenew();
 }
 
 // Get and store id_token in local storage

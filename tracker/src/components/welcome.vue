@@ -10,7 +10,7 @@
 
 <script>
 import AppNav from "./AppNav";
-import { isLoggedIn, login } from "../utils/auth";
+import { isLoggedIn, login, renewToken, autoRenew } from "../utils/auth";
 
 export default {
   components: { AppNav },
@@ -18,9 +18,14 @@ export default {
   methods: {
     handleLogin: login
   },
-  mounted() {
+  beforeMount() {
     if (isLoggedIn()) {
-      this.$router.push("/conferences");
+      this.$router.push("/upcoming");
+    } else {
+      renewToken(() => {
+        autoRenew();
+        this.$router.push("/upcoming");
+      });
     }
   }
 };
