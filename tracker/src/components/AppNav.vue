@@ -22,7 +22,7 @@
           <template slot="button-content">
             <img :src="getUserImage" class="profile-pic"/>
           </template>
-          <b-dropdown-item href="/profile">
+          <b-dropdown-item to="/profile">
             Profile
           </b-dropdown-item>
           <b-dropdown-item href="#" @click="handleLogout()">Logout</b-dropdown-item>
