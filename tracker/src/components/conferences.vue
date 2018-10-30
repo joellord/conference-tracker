@@ -22,6 +22,17 @@
       </b-col>
     </b-row>
 
+    <b-row class="text-right">
+      <b-col cols="8"></b-col>
+      <b-col cols="4">
+        <b-form-input
+          class="float-right"
+          id="filter"
+          v-model="filterText"
+          placeholder="Search"></b-form-input>
+      </b-col>
+    </b-row>
+
     <b-row><b-col>&nbsp;</b-col></b-row>
 
     <b-row>
@@ -37,7 +48,8 @@
           </thead>
           <tbody>
             <tr v-for="conference in conferences" :key="conference._id"
-                v-show="((!conference.myApproved && conference.myRejected) && hideRejected === 'show') || !conference.myRejected">
+                v-show="(((!conference.myApproved && conference.myRejected) && hideRejected === 'show') || !conference.myRejected)
+                        && (!filterText || (filterText.toLowerCase() && conference.name.toLowerCase().indexOf(filterText) > -1))">
               <td v-show="hideRejected">
                 <router-link :to="'conference/' + conference._id">{{ conference.name }}</router-link>
                 <a :href="conference.url" target="_blank">🔗</a>
@@ -99,7 +111,8 @@ export default {
     return {
       conferences: [],
       hideRejected: "hide",
-      now: (new Date()).getTime()
+      now: (new Date()).getTime(),
+      filterText: ""
     };
   },
   mounted() {
