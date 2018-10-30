@@ -428,8 +428,14 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     zapierParams.location = meetup.location;
     zapierParams.attendeeGoal = meetup.attendeeGoal;
 
+    console.log("Preparing zapier params", zapierParams);
+    console.log("Just need to find the talk " + meetup.talkId);
+
     return models.Talk.findOne({_id: meetup.talkId});
   }).then(talk => {
+
+    console.log("Found talk", talk);
+
     zapierParams.talks = talk.title;
 
     return models.User.findOne({_id: userId});
