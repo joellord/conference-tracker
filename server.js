@@ -422,7 +422,7 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
   }).then(data => {
     console.log("Updated meetup ", data);
     return models.Meetup.findOne({_id: req.params.meetupId}).populate("talkId");
-  }).then(data=>console.log("Populated meetup", data)).then(m => {
+  }).then(m => {
     meetup = m;
     zapierParams.meetupId = meetup._id;
     zapierParams.conference = meetup.name;
