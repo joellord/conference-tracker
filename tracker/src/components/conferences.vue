@@ -63,13 +63,18 @@
                     </router-link>
                     <b-btn variant="sm" class="btn-danger" @click="rejectConference(conference._id)">Rejected</b-btn>
                   </li>
-                  <li class="list-inline-item" v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">
+                  <li
+                    class="list-inline-item"
+                    v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected && !conference.expired">
                     <router-link :to="'conferences/submitted/' + conference._id">
                       Submit
                     </router-link>
                     <span v-show="conference.cfpUrl && conference.cfpEnd > now">
                       (<a :href="conference.cfpUrl">CFP</a>)
                     </span>
+                  </li>
+                  <li class="list-inline-item" v-if="!conference.myApproved && conference.expired">
+                      Too late! CFP closed on {{ dateFormat(conference.cfpDate) }}
                   </li>
                 </ul>
               </td>
