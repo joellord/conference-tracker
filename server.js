@@ -417,7 +417,11 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
   getMongoUserId(req.headers).then(id => {
     userId = id;
     req.body.status = models.const.MEETUP_STATUS.CONFIRMED;
-    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body); //.populate("Talk");
+
+    return models.Meetup.findOne({_id: req.params.meetupId});
+  }).then(data => {
+    console.log("Found meetup ", data);
+    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body).populate("Talk");
   }).then(m => {
     meetup = m;
     zapierParams.meetupId = meetup._id;
