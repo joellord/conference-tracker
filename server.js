@@ -428,7 +428,7 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     zapierParams.conference = meetup.name;
     zapierParams.start = helpers.dateFormat(meetup.startDate);
     zapierParams.dates = zapierParams.start;
-    zapierParams.website = `https://meetup.com/${meetup.urlname}`;
+    zapierParams.website = `https://meetup.com/${meetup.meetupUrlName}`;
     zapierParams.location = meetup.location;
     zapierParams.attendeeGoal = meetup.attendeeGoal;
 
