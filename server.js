@@ -418,11 +418,11 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     userId = id;
     req.body.status = models.const.MEETUP_STATUS.CONFIRMED;
 
-    return models.Meetup.findOne({_id: req.params.meetupId});
+    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body);
   }).then(data => {
-    console.log("Found meetup ", data);
-    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body).populate("Talk");
-  }).then(m => {
+    console.log("Updated meetup ", data);
+    return models.Meetup.findOne({_id: req.params.meetupId}).populate("Talk");
+  }).then(data=>console.log("Populated meetup", data)).then(m => {
     meetup = m;
     zapierParams.meetupId = meetup._id;
     zapierParams.conference = meetup.name;
