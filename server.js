@@ -83,6 +83,7 @@ app.get("/api/conferences", authCheck, (req, res) => {
       conf.myApproved = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED && s.userId.toString() == userId).length;
       conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId.toString() == userId).length;
       conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId.toString() == userId).length;
+      conf.expired = conf.mySubmissions === 0 && conference.cfpDate < (new Date()).getTime();
       return conf;
     });
     return confs;
@@ -205,6 +206,8 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   let userId;
   let conf;
 
+  console.log("Accepted at conference, starting Zapier sequence");
+
   // Zapier stuff
   let zapierParams = {};
 
@@ -247,6 +250,8 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   }).then(user => {
     zapierParams.speaker = user.name;
   }).then(() => {
+    console.log("Starting Zapier with params", zapierParams);
+
     return zapier.approved(zapierParams);
   }).catch((err) => console.log("Error sending to Zapier", err)).then(() => {
     res.json(conf);
@@ -255,6 +260,9 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
 
 app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
   let userId;
+
+  console.log("Initiating rejection process");
+
   getMongoUserId(req.headers).then(id => {
     userId = id;
     return models.Conference.findOne({_id: req.params.id});
@@ -272,6 +280,7 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
 });
 
 app.post("/api/conference", authCheck, (req, res) => {
+  console.log("Adding new conference", req.body);
   models.Conference.create({
     name: req.body.name,
     startDate: new Date(req.body.startDate),
@@ -289,6 +298,7 @@ app.post("/api/conference", authCheck, (req, res) => {
 });
 
 app.put("/api/conference/:id", authCheck,  (req,  res) => {
+  console.log("Updating conference", req.body);
   models.Conference.findOneAndUpdate({_id: req.params.id}, req.body).then(conference => {
     res.json(conference);
   });
@@ -303,6 +313,8 @@ app.get("/api/talks", authCheck, (req, res) => {
 });
 
 app.post("/api/talk", authCheck, (req, res) => {
+  console.log("Create new talk");
+
   getMongoUserId(req.headers).then(id => {
     return models.Talk.create({
       title: req.body.title,
@@ -320,6 +332,8 @@ app.get("/api/talk/:id", authCheck,  (req,  res) => {
 });
 
 app.put("/api/talk/:id", authCheck,  (req,  res) => {
+  console.log("Update talk " + req.params.id, req.body);
+
   models.Talk.findOneAndUpdate({_id: req.params.id}, req.body).then(talk => {
     res.json(talk);
   });
@@ -327,6 +341,9 @@ app.put("/api/talk/:id", authCheck,  (req,  res) => {
 
 app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
+
+  console.log("User submitted to conference");
+
   getMongoUserId(req.headers).then(id => {
     userId = id;
     return models.Conference.findOne({_id: req.params.id});
@@ -353,6 +370,8 @@ app.get("/api/user", authCheck, (req, res) => {
 });
 
 app.post("/api/user", authCheck, (req, res) => {
+  console.log("Updates to user profile", req.body);
+
   getMongoUserId(req.headers).then(id => {
     const userData = {
       auth0Id: getUserId(req.headers)
@@ -373,10 +392,6 @@ app.post("/api/user", authCheck, (req, res) => {
 });
 
 app.get("/api/meetups", authCheck, (req, res) => {
-  console.log("User requested list of meetups");
-  console.info("Info");
-  console.debug("Debug");
-  console.error("Error");
   getMongoUserId(req.headers).then(id => {
     return models.Meetup.find({userId: id, status: {$in: [models.const.MEETUP_STATUS.APPLIED, models.const.MEETUP_STATUS.CONFIRMED]}}).populate("userId");
   }).then(meetups => {
@@ -396,6 +411,8 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
   let userId;
   let zapierParams = {};
   let meetup = {};
+
+  console.log("Meetup is approved, starting Zapier sequence");
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
@@ -421,6 +438,8 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
 
     return zapierParams;
   }).then(params => {
+    console.log("Starting Zapier sequence with params", params);
+
     Zapier.meetupApproved(params);
   }).then(() => {
     res.json(meetup);
@@ -428,6 +447,8 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
 });
 
 app.post("/api/meetup/applied", authCheck, (req, res) => {
+  console.log("User applied to meetup");
+
   getMongoUserId(req.headers).then(id => {
     return models.Meetup.create({
       meetupUrlName: req.body.meetupUrlName,
@@ -445,6 +466,8 @@ app.post("/api/meetup/applied", authCheck, (req, res) => {
 });
 
 app.post("/api/meetup/rejected/:id", authCheck, (req, res) => {
+  console.log("Rejected from meetups :(");
+
   models.Meetup.findOneAndUpdate({
     _id: req.params.id
   }, {
@@ -453,6 +476,8 @@ app.post("/api/meetup/rejected/:id", authCheck, (req, res) => {
 });
 
 app.post("/api/meetup/dropped/:id", authCheck, (req, res) => {
+  console.log("Meetup flagged as fuck it");
+
   models.Meetup.findOneAndUpdate({
     _id: req.params.id
   }, {
