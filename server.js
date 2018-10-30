@@ -374,6 +374,9 @@ app.post("/api/user", authCheck, (req, res) => {
 
 app.get("/api/meetups", authCheck, (req, res) => {
   console.log("User requested list of meetups");
+  console.info("Info");
+  console.debug("Debug");
+  console.error("Error");
   getMongoUserId(req.headers).then(id => {
     return models.Meetup.find({userId: id, status: {$in: [models.const.MEETUP_STATUS.APPLIED, models.const.MEETUP_STATUS.CONFIRMED]}}).populate("userId");
   }).then(meetups => {
