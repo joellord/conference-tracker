@@ -84,7 +84,7 @@ app.get("/api/conferences", authCheck, (req, res) => {
       conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId.toString() == userId).length;
       conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId.toString() == userId).length;
       conf.expired = conf.mySubmissions === 0 && conference.cfpDate < (new Date()).getTime();
-      conf.rejected = conf.mySubmissions > 0 && conf.mySubmissions === conf.myRejected;
+      conf.rejected = !conf.myApproved && conf.myRejected;
       return conf;
     });
     return confs;
