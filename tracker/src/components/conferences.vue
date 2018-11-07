@@ -19,6 +19,9 @@
         <b-form-checkbox id="hide-rejected" v-model="hideRejected" value="hide" unchecked-value="show">
           Hide Rejected
         </b-form-checkbox>
+        <b-form-checkbox id="hide-expired" v-model="hideExpired" value="hide" unchecked-value="show">
+          Hide Expired CFPs
+        </b-form-checkbox>
       </b-col>
     </b-row>
 
@@ -48,9 +51,10 @@
           </thead>
           <tbody>
             <tr v-for="conference in conferences" :key="conference._id"
-                v-show="(((!conference.myApproved && conference.myRejected) && hideRejected === 'show') || !conference.myRejected)
-                        && (!filterText || (filterText.toLowerCase() && conference.name.toLowerCase().indexOf(filterText) > -1))">
-              <td v-show="hideRejected">
+                v-show="(hideRejected == 'show' || (hideRejected === 'hide' && !conference.rejected))
+                        && (!filterText || (filterText.toLowerCase() && conference.name.toLowerCase().indexOf(filterText) > -1))
+                        && (hideExpired == 'show' || (hideExpired === 'hide' && !conference.expired))">
+              <td>
                 <router-link :to="'conference/' + conference._id">{{ conference.name }}</router-link>
                 <a :href="conference.url" target="_blank">🔗</a>
               </td>
@@ -58,13 +62,13 @@
                 {{ dateFormat(conference.startDate) }}
                 <span v-if="conference.endDate != conference.startDate">to {{ dateFormat(conference.endDate) }}</span>
               </td>
-              <td v-show="hideRejected">
+              <td>
                 <span v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">N/A</span>
                 <span v-if="conference.mySubmissions > 0">Submitted</span>
                 <span v-if="conference.myApproved">Approved</span>
                 <span v-if="!conference.myApproved && conference.myRejected">Rejected</span>
               </td>
-              <td v-show="hideRejected">
+              <td>
                 <ul class="list-inline">
                   <li class="list-inline-item" v-if="conference.myApproved">
                     👍 (<a :href="conference.slkLink" target="_blank">SLK</a> )
@@ -111,6 +115,7 @@ export default {
     return {
       conferences: [],
       hideRejected: "hide",
+      hideExpired: "hide",
       now: (new Date()).getTime(),
       filterText: ""
     };
