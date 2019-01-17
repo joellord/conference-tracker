@@ -5,10 +5,10 @@ const jwks = require("jwks-rsa");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwtDecode = require("jwt-decode");
-const mongoose = require("mongoose");
 const axios = require("axios");
 
-const models = require("./server-utils/schemas");
+const mysql = require("mysql");
+
 const zapier = require("./server-utils/zapier");
 const helpers = require("./server-utils/helpers");
 
@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === "prod") {
 const CONNECTION_STRING = creds.DB_CONN_STRING;
 const PORT = process.env.PORT || 3333;
 
-mongoose.connect(CONNECTION_STRING);
+const connection = mysql.createConnection(CONNECTION_STRING);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -52,7 +52,16 @@ const getUserId = (headers) => {
 
 const getMongoUserId = (headers) => {
   const userId = getUserId(headers);
-  return models.User.findOne({auth0Id: userId}).then(user => user._id).catch(() => undefined);
+
+  let p = new Promise ((res, rej) => {
+    const conditions = {auth0Id: userId};
+    connection.query("SELECT * FROM users WHERE ?", conditions, (err, result) => {
+      if (err) return rej(err);
+      if (result.length === 0) return res(null);
+      return res(result[0].id);
+    });
+  });
+  return p;
 };
 
 const extractQueryParams = (url) => {
@@ -66,6 +75,29 @@ const extractQueryParams = (url) => {
   return params;
 };
 
+const query = (sql, params) => {
+  let p = new Promise((resolve, reject) => {
+    if (params) {
+      connection.query(sql, params, (err, result) => {
+        if(err) return reject(err);
+
+        return resolve(result);
+      });
+    } else {
+      connection.query(sql, (err, result) => {
+        if(err) return reject(err);
+
+        return resolve(result);
+      });
+    }
+  });
+  return p;
+};
+
+const queryOne = (sql, params) => {
+  return query(sql, params).then(data => data[0]);
+};
+
 app.use(express.static("dist"));
 
 app.get("/api/public", (req, res) => {
@@ -76,15 +108,21 @@ app.get("/api/conferences", authCheck, (req, res) => {
   let userId;
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.find({"startDate": { "$gte": new Date() }});
+
+    let sql = `SELECT conferences.*, conferences.id _id,
+        (SELECT COUNT(id) FROM submissions WHERE status = "APPROVED" AND userId = ${userId} AND conferenceId = conferences.id) myApproved,
+        (SELECT COUNT(id) FROM submissions WHERE status = "REJECTED" AND userId = ${userId} AND conferenceId = conferences.id) myRejected,
+        (SELECT COUNT(id) FROM submissions WHERE status = "NULL" AND userId = ${userId}  AND conferenceId = conferences.id) mySubmissions
+        FROM conferences
+        WHERE startDate > ${(new Date()).getTime()}`;
+
+    return query(sql);
   }).then(conferences => {
     let confs = conferences.map(conference => {
-      let conf = Object.assign({}, conference.toObject());
-      conf.myApproved = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED && s.userId.toString() == userId).length;
-      conf.myRejected = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.REJECTED && s.userId.toString() == userId).length;
-      conf.mySubmissions = conference.submissions.filter(s => s.status === models.const.CONF_STATUS.NULL && s.userId.toString() == userId).length;
+      let conf = Object.assign({}, conference);
       conf.expired = conf.mySubmissions === 0 && conference.cfpDate < (new Date()).getTime();
       conf.rejected = !!(!conf.myApproved && conf.myRejected);
+
       return conf;
     });
     return confs;
@@ -101,111 +139,100 @@ app.get("/api/conferences", authCheck, (req, res) => {
 
 app.get("/api/upcoming", (req, res) => {
   let users = [];
-  let formatted = [];
+  let upcoming = [];
 
-  models.Conference.find({
-      "endDate": { "$gte": new Date() },
-      "submissions.status": models.const.CONF_STATUS.APPROVED
-    })
-  .populate("submissions.userId")
-  .then(upcoming => {
-    formatted = upcoming.map(u => {
-      let submissions = u.submissions.filter(s => s.status === models.const.CONF_STATUS.APPROVED);
-      u.submissions = submissions;
-      let speakers = [];
-      submissions.map(s => {
-        if (speakers.indexOf(s.userId.name) === -1) speakers.push(s.userId.name);
-      });
-      let conference = Object.assign({}, u.toObject());
-      conference.speakers = speakers.join(" ");
-      conference.type = "CONFERENCE";
-      return conference;
-    });
+  let sql = `SELECT c.*, c.id _id, GROUP_CONCAT(DISTINCT u.name SEPARATOR ", ") speakers, s.status, "CONFERENCE" type
+      FROM conferences c, users u, submissions s
+      WHERE s.conferenceId = c.id 
+        AND s.userId = u.id 
+        AND s.status = "APPROVED"
+        AND c.startDate > ${(new Date()).getTime()} 
+      GROUP BY c.name`;
 
-    return models.Meetup.find({
-      "startDate": { "$gte": new Date() },
-      "status": models.const.MEETUP_STATUS.CONFIRMED
-    }).populate("userId");
+  query(sql).then(conferences => {
+    upcoming = upcoming.concat(conferences);
+
+    let sql = `SELECT m.*, m.id _id, u.name speakers, "MEETUP" type, CONCAT("https://www.meetup.com/", m.meetupUrlName) url
+      FROM meetups m, users u
+      WHERE m.userId = u.id AND m.status = "CONFIRMED" AND m.startDate > ${(new Date()).getTime()}`;
+
+    return query(sql);
   }).then(meetups => {
-    meetups.map(m => {
-      let meetup = Object.assign({}, m.toObject());
-      meetup.speakers = m.userId.name;
-      meetup.url = `https://www.meetup.com/${m.meetupUrlName}`;
-      meetup.type = "MEETUP";
-      formatted.push(meetup);
+    upcoming = upcoming.concat(meetups);
+
+    upcoming = upcoming.sort((a, b) => {
+      if (a.startDate < b.startDate) return -1;
+      return 1;
     });
 
-    formatted = formatted.sort((a, b) => {
-      let dateA = (new Date(a.startDate)).getTime();
-      let dateB = (new Date(b.startDate)).getTime();
-      return dateA > dateB ? 1 : -1;
-    });
-
-    res.json(formatted);
+    res.json(upcoming);
   });
 });
 
+//TODO Test this URL
 app.get("/api/conference/slk", (req, res) => {
   const params = extractQueryParams(req.url);
   const conferenceId = params.conference_id;
   const slkLink = params.slk_link;
 
-  models.Conference.findOneAndUpdate({_id: conferenceId}, {slkLink}).then(conference => {
-    res.json(conference);
+  let sql = `UPDATE conferences SET slkLink = "${slkLink} WHERE conferenceId = ${conferenceId}`;
+
+  connection.query(sql, (err, result) => {
+    res.json(result);
   });
 });
 
 app.get("/api/conference/:id", authCheck, (req, res) => {
-  let talkIds = [];
-  let talks = {};
-  let userIds = [];
-  let users = {};
-  let conference = {};
+  let conferenceId = req.params.id;
+  let fullConference;
 
-  models.Conference.findOne({_id: req.params.id}).then(conf => {
-    conference = conf;
-    conf.submissions.map((s) => {
-      if (talkIds.indexOf(s.talkId) === -1) talkIds.push(s.talkId);
-      if (userIds.indexOf(s.userId.toString()) === -1) userIds.push(s.userId);
-    });
-    return models.User.find({"_id": {$in: userIds}});
-  }).then(data => {
-    data.map((user) => users[user._id] = user);
-    return models.Talk.find({_id: {$in: talkIds}})
-  }).then(data => {
-    data.map((talk) => talks[talk._id] = talk);
-    return conference;
-  }).then(conf => {
-    let populatedConference = Object.assign({}, conf._doc);
-    populatedConference.submissions = conference.submissions.map((s) => {
-      return Object.assign({}, s._doc,  {
-        user: users[s.userId],
-        talk: talks[s.talkId]
+  let sql = `SELECT *, id _id FROM conferences WHERE id = ?`;
+  queryOne(sql, [conferenceId]).then(conference => {
+    fullConference = conference;
+
+    let sql = `SELECT s.*, t.title, u.name
+      FROM submissions s, talks t, users u
+      WHERE s.talkId = t.id AND s.userId = u.id AND s.conferenceId = ?`;
+
+    return query(sql, [conferenceId]);
+  }).then(submissions => {
+    fullConference.submissions = [];
+    submissions.map(s => {
+      fullConference.submissions.push({
+        talk: {title: s.title},
+        user: {name: s.name},
+        status: s.status
       });
     });
-    res.json(populatedConference)
-  });
+
+    return fullConference;
+  }).then(data => {
+    res.json(data);
+  }).catch(err => console.log(err));
 });
 
 app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
+  let conferenceId = req.params.id;
+
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.findOne({_id: req.params.id});
-  }).then(conference => {
-    return conference.submissions.filter(c => c.userId.toString() == userId);
-  }).then(submissions => {
-    let talkIds = submissions.map(s => s.talkId);
-    return models.Talk.find({_id: {$in: talkIds}});
-  }).then(talks => {
-    res.json(talks);
+    let sql = `SELECT s.*, t.*, t.id _id 
+      FROM submissions s, talks t 
+      WHERE s.talkId = t.id AND conferenceId = ? AND s.userId = ?`;
+
+    return query(sql, [conferenceId, userId]);
+  }).then(result => {
+    res.json(result);
   });
 });
 
+// TODO TEst
 app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   const approvedSubmissions = req.body;
   let userId;
-  let conf;
+  let conference;
+  let conferenceId = req.params.id;
 
   console.log("Accepted at conference, starting Zapier sequence");
 
@@ -214,21 +241,23 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.findOne({_id: req.params.id});
-  }).then(conference => {
-    conference.submissions.map(c => {
-      if (c.userId.toString() == userId) {
-        if (approvedSubmissions.indexOf(c.talkId) > -1) {
-          c.status = models.const.CONF_STATUS.APPROVED;
-        } else {
-          c.status = models.const.CONF_STATUS.REJECTED;
-        }
-      }
-    });
-    return conference.save();
-  }).catch(() => console.log("Error saving approvals")).then(conference => {
-    conf = conference;
-    zapierParams.conferenceId = conference._id;
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
+  }).then(data => {
+    conference = data;
+
+    let sql = `UPDATE submissions SET status = "APPROVED" 
+    WHERE conferenceId = ? 
+    AND talkId IN (?)`;
+
+    return query(sql, [conferenceId, approvedSubmissions]);
+  }).then(_ => {
+    let sql = `UPDATE submissions SET status = "REJECTED" 
+    WHERE conferenceId = ?
+    AND talkId NOT IN (?)`;
+
+    return query(sql, [conferenceId, approvedSubmissions]);
+  }).catch((err) => console.log("Error saving approvals", err)).then(_ => {
+    zapierParams.conferenceId = conference.id;
     zapierParams.conference = conference.name;
     zapierParams.start = helpers.dateFormat(conference.startDate);
     zapierParams.end = helpers.dateFormat(conference.endDate);
@@ -240,14 +269,18 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     zapierParams.overview = conference.overview;
     zapierParams.attendeeGoal = conference.attendeeGoal;
     zapierParams.relationshipGoal = conference.relationshipGoal;
-    return models.Talk.find({_id: {$in: approvedSubmissions}});
+
+    let sql = `SELECT t.* FROM talks t, submissions s WHERE s.talkId = t.id AND t.id IN (?) AND s.conferenceId = ?`;
+    return query(sql, [approvedSubmissions, conferenceId]);
   }).then(talks => {
     talks.map((talk, index) => {
       zapierParams[`talk${index}`] = talk.title;
       zapierParams.talks += talk.title + "\r\n";
     });
     zapierParams.talks = zapierParams.talks.substr(0, zapierParams.talks.length - 2);
-    return models.User.findOne({_id: userId});
+
+    let sql = `SELECT * FROM users WHERE id = ?`;
+    return queryOne(sql, [userId]);
   }).then(user => {
     zapierParams.speaker = user.name;
   }).then(() => {
@@ -255,26 +288,23 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
 
     return zapier.approved(zapierParams);
   }).catch((err) => console.log("Error sending to Zapier", err)).then(() => {
-    res.json(conf);
+    res.json(conference);
   });
 });
 
 app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
   let userId;
+  let conferenceId = req.params.id;
 
   console.log("Initiating rejection process");
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.findOne({_id: req.params.id});
-  }).then(conference => {
-    conference.submissions.map(c => {
-      if (c.userId.toString() == userId) {
-        c.status = models.const.CONF_STATUS.REJECTED;
-      }
-    });
+    let sql = `UPDATE submissions SET status = "REJECTED" WHERE conferenceId = ? AND userId = ?`;
 
-    return conference.save();
+    return query(sql, [conferenceId, userId]);
+  }).then(_ => {
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
   }).then(conference => {
     res.json(conference);
   });
@@ -282,17 +312,10 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
 
 app.post("/api/conference", authCheck, (req, res) => {
   console.log("Adding new conference", req.body);
-  models.Conference.create({
-    name: req.body.name,
-    startDate: new Date(req.body.startDate),
-    endDate: new Date(req.body.endDate),
-    city: req.body.city,
-    state: req.body.state,
-    country: req.body.country,
-    url: req.body.url,
-    cfpUrl: req.body.cfpUrl,
-    cfpDate: new Date(req.body.cfpDate),
-    twitter: req.body.twitter,
+  let sql = `INSERT INTO conferences SET ?`;
+
+  query(sql, [req.body]).then(result => {
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [result.insertId]);
   }).then(conference => {
     res.json(conference);
   });
@@ -300,14 +323,25 @@ app.post("/api/conference", authCheck, (req, res) => {
 
 app.put("/api/conference/:id", authCheck,  (req,  res) => {
   console.log("Updating conference", req.body);
-  models.Conference.findOneAndUpdate({_id: req.params.id}, req.body).then(conference => {
+  let data = req.body;
+  let conferenceId = req.params.id;
+  delete data.id;
+  delete data._id;
+  // Ignore submissions
+  delete data.submissions;
+  console.log("Updating conference with ", data);
+  let sql = `UPDATE conferences SET ? WHERE id = ?`;
+  query(sql, [data, conferenceId]).then(_ => {
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
+  }).then(conference => {
     res.json(conference);
   });
 });
 
 app.get("/api/talks", authCheck, (req, res) => {
   getMongoUserId(req.headers).then(id => {
-    return models.Talk.find({userId: id})
+    let sql = `SELECT *, id _id FROM talks WHERE userId = ?`;
+    return query(sql, [id]);
   }).then(talks => {
     res.json(talks);
   });
@@ -317,46 +351,55 @@ app.post("/api/talk", authCheck, (req, res) => {
   console.log("Create new talk");
 
   getMongoUserId(req.headers).then(id => {
-    return models.Talk.create({
-      title: req.body.title,
-      userId: id
-    })
+    let sql = `INSERT INTO talks SET ?`;
+    let talk = {title: req.body.title, userId: id};
+    return query(sql, [talk]);
   }).then(talk => {
     res.json(talk);
   });
 });
 
 app.get("/api/talk/:id", authCheck,  (req,  res) => {
-  models.Talk.findOne({_id: req.params.id}).then(talk => {
+  queryOne(`SELECT * FROM talks WHERE id = ?`, [req.params.id]).then(talk => {
     res.json(talk);
   });
 });
 
 app.put("/api/talk/:id", authCheck,  (req,  res) => {
   console.log("Update talk " + req.params.id, req.body);
-
-  models.Talk.findOneAndUpdate({_id: req.params.id}, req.body).then(talk => {
+  let data = req.body;
+  delete data.id;
+  let talkId = req.params.id;
+  let sql = `UPDATE talks SET ? WHERE id = ?`;
+  query(sql, [data, talkId]).then(_ => {
+    return queryOne(`SELECT * FROM talks WHERE id = ?`, [talkId]);
+  }).then(talk => {
     res.json(talk);
   });
 });
 
+//TODO Test
 app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
+  let conferenceId = req.params.id;
 
   console.log("User submitted to conference");
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    return models.Conference.findOne({_id: req.params.id});
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
   }).then(conference => {
+    let inserts = [];
+
     req.body.map(submission => {
-      conference.submissions.push({
-        talkId: submission.talkId,
-        userId: userId,
-        status: models.const.CONF_STATUS.NULL
-      });
+      let data = {talkId: submission.talkId, userId: userId, status: "NULL", conferenceId: conferenceId};
+      console.log("Submitting", data);
+      inserts.push(query(`INSERT INTO submissions SET ?`, [data]));
     });
-    return conference.save();
+
+    return Promise.all(inserts);
+  }).then(_ => {
+    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [req.params.id]);
   }).then(conference => {
     res.json(conference);
   });
@@ -364,9 +407,9 @@ app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
 
 app.get("/api/user", authCheck, (req, res) => {
   getMongoUserId(req.headers).then(id => {
-    models.User.findOne({_id: id}).then(profile => {
-      res.json(profile);
-    });
+    return queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
+  }).then(profile => {
+    res.json(profile);
   });
 });
 
@@ -380,30 +423,47 @@ app.post("/api/user", authCheck, (req, res) => {
     if (req.body.name) userData.name = req.body.name;
     if (req.body.picture) userData.picture = req.body.picture;
     if (req.body.bio) userData.bio = req.body.bio;
+    let sql = "";
     if (!id) {
-      models.User.create(userData);
+      sql = "INSERT INTO users SET ?";
     } else {
-      models.User.findOneAndUpdate({
-        _id: id
-      }, userData, { upsert: true}).then(data => {
-        res.json(data);
-      });
+      sql = `UPDATE users SET ? WHERE id = ${id}`;
     }
+    query(sql, [userData]).then(result => res.json(result));
   });
 });
 
 app.get("/api/meetups", authCheck, (req, res) => {
   getMongoUserId(req.headers).then(id => {
-    return models.Meetup.find({userId: id, status: {$in: [models.const.MEETUP_STATUS.APPLIED, models.const.MEETUP_STATUS.CONFIRMED]}}).populate("userId");
+    let sql = `SELECT m.*, m.id _id 
+      FROM meetups m, users u 
+      WHERE m.userId = u.id 
+        AND (
+          m.status = "APPLIED" OR
+          (m.status = "CONFIRMED" and m.startDate > ${(new Date()).getTime()})
+        )
+        AND m.status IN ("APPLIED", "CONFIRMED") 
+        AND u.id = ?
+      ORDER BY m.startDate`;
+    return query(sql, [id]);
   }).then(meetups => {
     res.json(meetups);
   });
 });
 
 app.get("/api/meetup/:meetupId", authCheck, (req, res) => {
-  models.Meetup.findOne({_id: req.params.meetupId})
-  .populate("userId").populate("talkId")
-  .then(meetup => {
+  let meetup;
+  queryOne(`SELECT * FROM meetups WHERE id = ?`, [req.params.meetupId]).then(data => {
+    meetup = data;
+
+    return queryOne(`SELECT * FROM users WHERE id = ?`, [meetup.userId]);
+  }).then(user => {
+    meetup.userId = user;
+
+    return queryOne(`SELECT * FROM talks WHERE id = ?`, [meetup.talkId]);
+  }).then(talk => {
+    meetup.talkId = talk;
+
     res.json(meetup);
   });
 });
@@ -412,40 +472,40 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
   let userId;
   let zapierParams = {};
   let meetup = {};
+  let meetupIncomingData = req.body;
 
   console.log("Meetup is approved, starting Zapier sequence");
 
   getMongoUserId(req.headers).then(id => {
     userId = id;
-    req.body.status = models.const.MEETUP_STATUS.CONFIRMED;
+    meetupIncomingData.status = "CONFIRMED";
+    meetupIncomingData.startDate = (new Date(meetupIncomingData.startDate)).getTime();
+    delete meetupIncomingData.userId;
 
-    return models.Meetup.findOneAndUpdate({_id: req.params.meetupId}, req.body);
+    console.log("Updating meetup", meetupIncomingData);
+    return query(`UPDATE meetups SET ? WHERE id = ?`, [meetupIncomingData, req.params.meetupId]);
   }).then(data => {
     console.log("Updated meetup ", data);
-    return models.Meetup.findOne({_id: req.params.meetupId}).populate("talkId");
+    let sql = `SELECT m.*, u.name speaker, t.title 
+      FROM meetups m, users u, talks t
+      WHERE m.talkId = t.id
+        AND t.userId = u.id
+        AND m.id = ?`;
+    return queryOne(sql, [req.params.meetupId]);
   }).then(m => {
     meetup = m;
-    zapierParams.meetupId = meetup._id;
+
+    console.log("Preparing zapier params", zapierParams);
+
+    zapierParams.meetupId = meetup.id;
     zapierParams.conference = meetup.name;
     zapierParams.start = helpers.dateFormat(meetup.startDate);
     zapierParams.dates = zapierParams.start;
     zapierParams.website = `https://meetup.com/${meetup.meetupUrlName}`;
     zapierParams.location = meetup.location;
     zapierParams.attendeeGoal = meetup.attendeeGoal;
-
-    console.log("Preparing zapier params", zapierParams);
-    console.log("Just need to find the talk " + meetup.talkId);
-
-    return models.Talk.findOne({_id: meetup.talkId});
-  }).then(talk => {
-
-    console.log("Found talk", talk);
-
-    zapierParams.talks = talk.title;
-
-    return models.User.findOne({_id: userId});
-  }).then(user => {
-    zapierParams.speaker = user.name;
+    zapierParams.talks = meetup.title;
+    zapierParams.speaker = meetup.speaker;
 
     return zapierParams;
   }).then(params => {
@@ -461,16 +521,20 @@ app.post("/api/meetup/applied", authCheck, (req, res) => {
   console.log("User applied to meetup");
 
   getMongoUserId(req.headers).then(id => {
-    return models.Meetup.create({
+    let data = {
       meetupUrlName: req.body.meetupUrlName,
-      suggestedDateStart: new Date(req.body.suggestedDateStart),
-      suggestedDateEnd: new Date(req.body.suggestedDateEnd),
-      confirmedDate: null,
+      suggestedDateStart: new Date(req.body.suggestedDateStart).getTime(),
+      suggestedDateEnd: new Date(req.body.suggestedDateEnd).getTime(),
+      startDate: null,
       name: req.body.name,
       location: req.body.location,
-      status: models.const.MEETUP_STATUS.APPLIED,
+      status: "APPLIED",
       userId: id
-    });
+    };
+    return query(`INSERT INTO meetups SET ?`, [data]);
+  }).then(result => {
+    console.log(result);
+    return queryOne(`SELECT * FROM meetups WHERE id = ?`, [result.insertId]);
   }).then(meetup => {
     res.json(meetup);
   });
@@ -479,21 +543,20 @@ app.post("/api/meetup/applied", authCheck, (req, res) => {
 app.post("/api/meetup/rejected/:id", authCheck, (req, res) => {
   console.log("Rejected from meetups :(");
 
-  models.Meetup.findOneAndUpdate({
-    _id: req.params.id
-  }, {
-    status: models.const.MEETUP_STATUS.REJECTED
-  }).then(data => res.json(data));
+  let sql = `UPDATE meetups SET status = "REJECTED" WHERE id = ?`;
+  query(sql, [req.params.id]).then(result => {
+    res.json(result);
+  });
 });
 
 app.post("/api/meetup/dropped/:id", authCheck, (req, res) => {
   console.log("Meetup flagged as fuck it");
 
-  models.Meetup.findOneAndUpdate({
-    _id: req.params.id
-  }, {
-    status: models.const.MEETUP_STATUS.DROPPED
-  }).then(data => res.json(data));});
+  let sql = `UPDATE meetups SET status = "DROPPED" WHERE id = ?`;
+  query(sql, [req.params.id]).then(result => {
+    res.json(result);
+  });
+});
 
 app.get("*", (req, res) => {
   res.sendFile(__dirname + "/dist/index.html");
