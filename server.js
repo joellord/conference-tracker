@@ -169,13 +169,12 @@ app.get("/api/upcoming", (req, res) => {
   });
 });
 
-//TODO Test this URL
 app.get("/api/conference/slk", (req, res) => {
   const params = extractQueryParams(req.url);
   const conferenceId = params.conference_id;
   const slkLink = params.slk_link;
 
-  let sql = `UPDATE conferences SET slkLink = "${slkLink} WHERE conferenceId = ${conferenceId}`;
+  let sql = `UPDATE conferences SET slkLink = "${slkLink}" WHERE conferenceId = ${conferenceId}`;
 
   connection.query(sql, (err, result) => {
     res.json(result);
@@ -227,7 +226,6 @@ app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
   });
 });
 
-// TODO TEst
 app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   const approvedSubmissions = req.body;
   let userId;
@@ -378,7 +376,6 @@ app.put("/api/talk/:id", authCheck,  (req,  res) => {
   });
 });
 
-//TODO Test
 app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
   let conferenceId = req.params.id;
