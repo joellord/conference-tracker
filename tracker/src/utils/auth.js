@@ -1,6 +1,5 @@
 import decode from "jwt-decode";
 import auth0 from "auth0-js";
-import Router from "vue-router";
 
 import creds from "./credentials";
 
@@ -8,45 +7,53 @@ const ID_TOKEN_KEY = "id_token";
 const ACCESS_TOKEN_KEY = "access_token";
 
 const CLIENT_ID = creds.CLIENT_ID;
-const CLIENT_DOMAIN = creds.DOMAIN;
+const DOMAIN = creds.DOMAIN;
 const REDIRECT = creds.REDIRECT;
 const SCOPE = creds.SCOPE;
 const AUDIENCE = creds.AUDIENCE;
 
 const auth = new auth0.WebAuth({
   clientID: CLIENT_ID,
-  domain: CLIENT_DOMAIN
+  domain: DOMAIN,
+  responseType: "token id_token",
+  redirectUri: REDIRECT,
+  audience: AUDIENCE,
+  scope: SCOPE
 });
+
+const tokens = {};
+const tokenStorage = {
+  removeItem: (key) => { tokens[key] = ""; },
+  getItem: key => tokens[key],
+  setItem: (key, value) => { tokens[key] = value; }
+};
+
+let tokenRenewalTimeout;
 
 export function login() {
-  auth.authorize({
-    responseType: "token id_token",
-    redirectUri: REDIRECT,
-    audience: AUDIENCE,
-    scope: SCOPE
-  });
+  auth.authorize({});
 }
 
-const router = new Router({
-  mode: "history"
-});
-
 function clearIdToken() {
-  localStorage.removeItem(ID_TOKEN_KEY);
+  tokenStorage.removeItem(ID_TOKEN_KEY);
 }
 
 function clearAccessToken() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  tokenStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
 export function logout() {
   clearIdToken();
   clearAccessToken();
-  router.go("/");
+  clearTimeout(tokenRenewalTimeout);
+
+  auth.logout({
+    returnTo: `${location.origin}/`
+  });
 }
 
 export function getIdToken() {
-  return localStorage.getItem(ID_TOKEN_KEY);
+  return tokenStorage.getItem(ID_TOKEN_KEY);
 }
 
 function getTokenExpirationDate(encodedToken) {
@@ -81,7 +88,7 @@ export function requireAuth(to, from, next) {
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return tokenStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 // Helper function that will allow us to extract the access_token and id_token
@@ -90,16 +97,43 @@ function getParameterByName(name) {
   return match && decodeURIComponent(match[1].replace(/\+/g, " "));
 }
 
+export function renewToken(cb) {
+  auth.checkSession({}, (err, result) => {
+    if (err) {
+      return;
+    }
+    tokenStorage.setItem(ID_TOKEN_KEY, result.idToken);
+    tokenStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
+
+    if (cb) {
+      cb();
+    }
+  });
+}
+
+export function autoRenew() {
+  const decoded = decode(tokenStorage.getItem(ACCESS_TOKEN_KEY));
+  const expiry = decoded.exp * 1000;
+  const delay = expiry - new Date();
+
+  // Schedule an auto renew, one minute before expiry
+  tokenRenewalTimeout = setTimeout(() => {
+    renewToken();
+    autoRenew();
+  }, delay - 60000);
+}
+
 // Get and store access_token in local storage
 export function setAccessToken() {
   const accessToken = getParameterByName("access_token");
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  autoRenew();
 }
 
 // Get and store id_token in local storage
 export function setIdToken() {
   const idToken = getParameterByName("id_token");
-  localStorage.setItem(ID_TOKEN_KEY, idToken);
+  tokenStorage.setItem(ID_TOKEN_KEY, idToken);
 }
 
 export function getUserParam(param) {

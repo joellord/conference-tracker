@@ -32,8 +32,8 @@
                 <b-badge pill variant="danger" v-if="conference.type=='MEETUP'">Meetup</b-badge>
               </td>
               <td>
-                {{ new Date(conference.startDate).toLocaleDateString() }}
-                <span v-if="conference.endDate"> to {{ new Date(conference.endDate).toLocaleDateString() }}</span>
+                {{ dateFormat(conference.startDate) }}
+                <span v-if="conference.endDate && conference.startDate != conference.endDate"> to {{ dateFormat(conference.endDate) }}</span>
               </td>
               <td>
                 {{ conference.speakers }}
@@ -56,6 +56,7 @@
 <script>
 import AppNav from "./AppNav";
 import { getUpcomingConferences } from "../utils/conf-api";
+import { dateFormat } from "../utils/helpers";
 
 export default {
   components: { AppNav },
@@ -70,6 +71,9 @@ export default {
     this.getUpcoming();
   },
   methods: {
+    dateFormat(d) {
+      return dateFormat(d);
+    },
     getUpcoming() {
       getUpcomingConferences().then((conferences) => {
         this.conferences = conferences;

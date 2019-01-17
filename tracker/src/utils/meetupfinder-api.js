@@ -17,8 +17,8 @@ function getMeetup(urlname) {
   return axios.get(url, getHeaders()).then(resp => resp.data);
 }
 
-function getMeetups(city) {
-  const url = `${BASE_URL}/meetups?location=${city}`;
+function getMeetups(latlng) {
+  const url = `${BASE_URL}/meetups?lat=${latlng.lat}&lon=${latlng.lng}`;
   return axios.get(url, getHeaders()).then(resp => resp.data).then((data) => {
     // Process Meetup data
     let maxMembers = 0;

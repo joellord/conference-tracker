@@ -47,7 +47,8 @@
                     <b-btn variant="sm" class="btn-light" @click="dropMeetup(meetup._id)">Fuck it</b-btn>
                   </li>
                   <li class="list-inline-item" v-if="meetup.status === 'CONFIRMED'">
-                    Accepted - View details
+                    Accepted
+                    <router-link :to="'meetup/' + meetup._id">View details</router-link>
                   </li>
                 </ul>
               </td>

@@ -13,7 +13,8 @@
       <b-col cols="8" offset="2">
         <b-form inline>
           <label class="sr-only" for="city">City</label>
-          <b-input class="col-8" id="city" placeholder="City" v-model="city" />
+          <!--<b-input class="col-8" id="city" placeholder="City" v-model="city" />-->
+          <places v-model="city" placeholder="City" @change="changeLocation"/>
           &nbsp;
           <b-button variant="primary" type="button" :disabled="searching" @click="findMeetups">Find Meetups</b-button>
         </b-form>
@@ -38,8 +39,8 @@
           <tr v-for="meetup in meetups" :key="meetup.id">
             <td><a :href="meetup.link" target="_blank">{{ meetup.name }}</a></td>
             <td>
-              <a :href='"https://www.google.com/maps/?q=" + meetup.lat + "," + meetup.lon' target="_blank">
-                {{ meetup.localized_location }}
+              <a :href='"https://www.google.com/maps/?q=" + meetup.coords.lat + "," + meetup.coords.lon' target="_blank">
+                {{ meetup.location }}
               </a>
             </td>
             <td>{{ meetup.members }} {{ meetup.who }}</td>
@@ -72,23 +73,28 @@
 </template>
 
 <script>
+import places from "vue-places";
 import AppNav from "./AppNav";
 import { getMeetups } from "../utils/meetupfinder-api";
 
 export default {
-  components: { AppNav },
+  components: { AppNav, places },
   name: "meetups-find",
   data() {
     return {
       city: "",
+      latlng: {},
       searching: false,
       meetups: []
     };
   },
   methods: {
+    changeLocation(query) {
+      this.latlng = query.latlng;
+    },
     findMeetups() {
       this.searching = true;
-      getMeetups(this.city).then((meetups) => {
+      getMeetups(this.latlng).then((meetups) => {
         this.searching = false;
         this.meetups = meetups;
       });
