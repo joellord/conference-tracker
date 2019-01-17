@@ -174,9 +174,10 @@ app.get("/api/conference/slk", (req, res) => {
   const conferenceId = params.conference_id;
   const slkLink = params.slk_link;
 
-  let sql = `UPDATE conferences SET slkLink = "${slkLink}" WHERE conferenceId = ${conferenceId}`;
+  let sql = `UPDATE conferences SET slkLink = ? WHERE conferenceId = ?`;
 
-  connection.query(sql, (err, result) => {
+  query(sql, [slkLink, conferenceId]).then(result => {
+    console.log("SLK Link updated to " + slkLink, result);
     res.json(result);
   });
 });
