@@ -28,8 +28,16 @@ function buildUrl(url, params) {
   return `${url}?${queryParams}`;
 }
 
+function encodeData(data) {
+  for(let key in data) {
+    data[key] = encodeURIComponent(data[key]);
+  }
+  return data;
+}
+
 Zapier = {
   meetupApproved: (data) => {
+    data = encodeData(data);
     data.conference = "Meetup " + data.conference;
     let promiseArray = [
       Zapier.sendSlackMessage(data),
@@ -43,6 +51,7 @@ Zapier = {
     });
   },
   approved: (data) => {
+    data = encodeData(data);
     let promiseArray = [
       Zapier.addConferenceToSheet(data),
       Zapier.createSLK(data),
