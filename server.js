@@ -282,6 +282,7 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     return queryOne(sql, [userId]);
   }).then(user => {
     zapierParams.speaker = user.name;
+    zapierParams.communityUsername = user.communityUsername || user.name;
   }).then(() => {
     console.log("Starting Zapier with params", zapierParams);
 
