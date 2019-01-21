@@ -252,9 +252,10 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   }).then(_ => {
     let sql = `UPDATE submissions SET status = "REJECTED" 
     WHERE conferenceId = ?
+    AND userId = ?
     AND talkId NOT IN (?)`;
 
-    return query(sql, [conferenceId, approvedSubmissions]);
+    return query(sql, [conferenceId, userId, approvedSubmissions]);
   }).catch((err) => console.log("Error saving approvals", err)).then(_ => {
     zapierParams.conferenceId = conference.id;
     zapierParams.conference = conference.name;
