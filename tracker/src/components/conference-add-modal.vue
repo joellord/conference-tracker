@@ -59,7 +59,9 @@
             </b-form-group>
           </b-col>
           <b-col cols="6">
-
+            <b-form-group label="Region" label-for="region">
+              <b-form-select id="region" v-model="conference.region" :options="regions" class="mb-3" />
+            </b-form-group>
           </b-col>
         </b-row>
         <b-row>
@@ -94,8 +96,10 @@ export default {
         city: "",
         state: "",
         country: "",
-        twitter: ""
-      }
+        twitter: "",
+        region: ""
+      },
+      regions: ["AMERICAS", "APAC", "EMEA", "Global"]
     };
   },
   methods: {
@@ -118,6 +122,7 @@ export default {
       this.conference.state = "";
       this.conference.country = "";
       this.conference.twitter = "";
+      this.conference.region = "";
     },
     handleSubmit() {
       // this.$refs.modal.hide();

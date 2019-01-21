@@ -17,7 +17,8 @@ const URL = {
   addToEvangelistCalendar: "https://hooks.zapier.com/hooks/catch/3069472/ks3xs7/",
   addToTrello: "https://hooks.zapier.com/hooks/catch/3069472/w59cdi/",
   addMeetupToTrello: "https://hooks.zapier.com/hooks/catch/3069472/wgpoty/",
-  addToCommunityForums: "https://hooks.zapier.com/hooks/catch/3069472/cc3e2t/"
+  addToCommunityForums: "https://hooks.zapier.com/hooks/catch/3069472/cc3e2t/",
+  addToMarketingRoadmap: "https://hooks.zapier.com/hooks/catch/3069472/wgx5s3/"
 };
 
 function buildUrl(url, params) {
@@ -37,8 +38,9 @@ function encodeData(data) {
 
 Zapier = {
   meetupApproved: (data) => {
-    data = encodeData(data);
+    data.topic = "Meetup";
     data.conference = "Meetup " + data.conference;
+    data = encodeData(data);
     let promiseArray = [
       Zapier.sendSlackMessage(data),
       Zapier.addConferenceToSheet(data),
@@ -51,6 +53,7 @@ Zapier = {
     });
   },
   approved: (data) => {
+    data.topic = "Conference";
     data = encodeData(data);
     let promiseArray = [
       Zapier.addConferenceToSheet(data),
@@ -58,7 +61,8 @@ Zapier = {
       Zapier.sendSlackMessage(data),
       Zapier.addToEvangelistCalendar(data),
       Zapier.addToTrello(data),
-      Zapier.addToCommunityForums(data)
+      Zapier.addToCommunityForums(data),
+      Zapier.addToMarketingRoadmap(data)
     ];
 
     Promise.all(promiseArray).then(data => {
@@ -132,6 +136,13 @@ Zapier = {
     let url = buildUrl(URL.addToCommunityForums, data);
     return axios.get(url).catch(err => {
       console.log("Error adding to Discourse", err);
+    });
+  },
+  addToMarketingRoadmap: (data) => {
+    data.topic = "Conference";
+    let url = buildUrl(URL.addToMarketingRoadmap, data);
+    return axios.get(url).catch(err => {
+      console.log("Error adding to marketing roadmap", err);
     });
   }
 };

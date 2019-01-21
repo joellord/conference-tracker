@@ -269,6 +269,7 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
     zapierParams.overview = conference.overview;
     zapierParams.attendeeGoal = conference.attendeeGoal;
     zapierParams.relationshipGoal = conference.relationshipGoal;
+    zapierParams.region = conference.region;
 
     let sql = `SELECT t.* FROM talks t, submissions s WHERE s.talkId = t.id AND t.id IN (?) AND s.conferenceId = ?`;
     return query(sql, [approvedSubmissions, conferenceId]);
