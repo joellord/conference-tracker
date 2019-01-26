@@ -18,7 +18,8 @@ const URL = {
   addToTrello: "https://hooks.zapier.com/hooks/catch/3069472/w59cdi/",
   addMeetupToTrello: "https://hooks.zapier.com/hooks/catch/3069472/wgpoty/",
   addToCommunityForums: "https://hooks.zapier.com/hooks/catch/3069472/cc3e2t/",
-  addToMarketingRoadmap: "https://hooks.zapier.com/hooks/catch/3069472/wgx5s3/"
+  addToMarketingRoadmap: "https://hooks.zapier.com/hooks/catch/3069472/wgx5s3/",
+  addToDevelopersReached: "https://hooks.zapier.com/hooks/catch/3069472/xmwrg8/"
 };
 
 function buildUrl(url, params) {
@@ -38,6 +39,8 @@ function encodeData(data) {
 
 Zapier = {
   meetupApproved: (data) => {
+    console.log("Zapierizing, meetup confirmed");
+
     data.topic = "Meetup";
     data.conference = "Meetup " + data.conference;
     data = encodeData(data);
@@ -46,13 +49,16 @@ Zapier = {
       Zapier.addConferenceToSheet(data),
       Zapier.addToEvangelistCalendar(data),
       Zapier.addMeetupToTrello(data),
-      Zapier.addToCommunityForums(data)
+      Zapier.addToCommunityForums(data),
+      Zapier.addToMarketingRoadmap(data)
     ];
     Promise.all(promiseArray).then(data => {
       console.log("Done with Zapier");
     });
   },
   approved: (data) => {
+    console.log("Zapierizing, accepted at conference");
+
     data.topic = "Conference";
     data = encodeData(data);
     let promiseArray = [
@@ -63,6 +69,16 @@ Zapier = {
       Zapier.addToTrello(data),
       Zapier.addToCommunityForums(data),
       Zapier.addToMarketingRoadmap(data)
+    ];
+
+    Promise.all(promiseArray).then(data => {
+      console.log("Done with Zapier");
+    });
+  },
+  report: (data) => {
+    console.log("Zapierizing, new report");
+    let promiseArray = [
+      Zapier.addToDevelopersReached(data)
     ];
 
     Promise.all(promiseArray).then(data => {
@@ -143,6 +159,12 @@ Zapier = {
     let url = buildUrl(URL.addToMarketingRoadmap, data);
     return axios.get(url).catch(err => {
       console.log("Error adding to marketing roadmap", err);
+    });
+  },
+  addToDevelopersReached: (data) => {
+    let url = buildUrl(URL.addToDevelopersReached, data);
+    return axios.get(url).catch(err => {
+      console.log("Error adding to Developers Reached sheet", err);
     });
   }
 };

@@ -127,6 +127,44 @@ function confirmMeetup(id, data) {
   return axios.put(url, data, getHeaders()).then(resp => resp.data);
 }
 
+function getReportsToDo() {
+  const url = `${BASE_URL}/api/reports/todo`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getEventDetails(type, id) {
+  if (type === "meetup") {
+    return getMeetup(id);
+  }
+
+  return getConference(id);
+}
+
+function createReport(data) {
+  const url = `${BASE_URL}/api/report`;
+  return axios.post(url, data, getHeaders()).then(resp => resp.data);
+}
+
+function getRegions() {
+  const url = `${BASE_URL}/api/regions`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getEventSources() {
+  const url = `${BASE_URL}/api/event-sources`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getEventTypes() {
+  const url = `${BASE_URL}/api/event-types`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
+function getNotifications() {
+  const url = `${BASE_URL}/api/notifications`;
+  return axios.get(url, getHeaders()).then(resp => resp.data);
+}
+
 export {
   getConferences,
   getUpcomingConferences,
@@ -148,5 +186,12 @@ export {
   applyMeetup,
   droppedMeetup,
   rejectedMeetup,
-  confirmMeetup
+  confirmMeetup,
+  getReportsToDo,
+  getEventDetails,
+  createReport,
+  getRegions,
+  getEventSources,
+  getEventTypes,
+  getNotifications
 };

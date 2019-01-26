@@ -21,6 +21,9 @@
         <b-form-group id="startDate" label="When are you presenting?" label-for="startDate" >
           <b-form-input id="startDate" type="date" v-model="meetup.startDate" />
         </b-form-group>
+        <b-form-group label="Region" label-for="region">
+          <b-form-select id="region" v-model="meetup.regionId" :options="regions" />
+        </b-form-group>
         <b-form-group id="attendee_goal" label="Expected Developers Reach:" label-for="attendee_goal" >
           <b-form-input id="attendee_goal" type="number" v-model="meetup.attendeeGoal" />
         </b-form-group>
@@ -37,7 +40,7 @@
 
 <script>
 import AppNav from "./AppNav";
-import { getMeetup, getMyTalks, confirmMeetup } from "../utils/conf-api";
+import { getMeetup, getMyTalks, confirmMeetup, getRegions } from "../utils/conf-api";
 
 export default {
   name: "submitted",
@@ -46,12 +49,17 @@ export default {
     return {
       talks: [],
       talkOptions: [],
-      meetup: {}
+      meetup: {},
+      regions: []
     };
   },
   mounted() {
     this.getMeetup();
     this.getMyTalks();
+    getRegions().then((regions) => {
+      regions.map(r => this.regions.push({ value: r.id, text: r.region }));
+      this.meetup.regionId = 1;
+    });
   },
   methods: {
     getMyTalks() {

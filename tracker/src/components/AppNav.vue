@@ -12,6 +12,10 @@
         <b-nav-item to="/meetups">Meetups</b-nav-item>
         <b-nav-item to="/upcoming">Upcoming</b-nav-item>
         <b-nav-item to="/talks">My Talks</b-nav-item>
+        <b-nav-item to="/reports">
+          Post-Event Reports
+          <b-badge pill variant="warning" v-if="notifications.reports > 0">{{ notifications.reports }}</b-badge>
+        </b-nav-item>
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->
@@ -37,9 +41,15 @@
 
 <script>
 import { isLoggedIn, getUserImage, login, logout } from "../utils/auth";
+import { getNotifications } from "../utils/conf-api";
 
 export default {
   name: "app-nav",
+  mounted() {
+    getNotifications().then((notifications) => {
+      this.notifications = notifications;
+    });
+  },
   methods: {
     handleLogin() {
       login();
@@ -53,7 +63,8 @@ export default {
   },
   data() {
     return {
-      getUserImage: getUserImage()
+      getUserImage: getUserImage(),
+      notifications: { reports: 0 }
     };
   }
 };

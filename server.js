@@ -12,6 +12,8 @@ const mysql = require("mysql");
 const zapier = require("./server-utils/zapier");
 const helpers = require("./server-utils/helpers");
 
+const now = helpers.now;
+
 let creds;
 
 if (process.env.NODE_ENV === "prod") {
@@ -50,7 +52,7 @@ const getUserId = (headers) => {
   return decoded.sub;
 };
 
-const getMongoUserId = (headers) => {
+const getDBUserId = (headers) => {
   const userId = getUserId(headers);
 
   let p = new Promise ((res, rej) => {
@@ -106,7 +108,7 @@ app.get("/api/public", (req, res) => {
 
 app.get("/api/conferences", authCheck, (req, res) => {
   let userId;
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
 
     let sql = `SELECT conferences.*, conferences.id _id,
@@ -114,13 +116,13 @@ app.get("/api/conferences", authCheck, (req, res) => {
         (SELECT COUNT(id) FROM submissions WHERE status = "REJECTED" AND userId = ${userId} AND conferenceId = conferences.id) myRejected,
         (SELECT COUNT(id) FROM submissions WHERE status = "NULL" AND userId = ${userId}  AND conferenceId = conferences.id) mySubmissions
         FROM conferences
-        WHERE startDate > ${(new Date()).getTime()}`;
+        WHERE startDate > ${now()}`;
 
     return query(sql);
   }).then(conferences => {
     let confs = conferences.map(conference => {
       let conf = Object.assign({}, conference);
-      conf.expired = conf.mySubmissions === 0 && conference.cfpDate < (new Date()).getTime();
+      conf.expired = conf.mySubmissions === 0 && conference.cfpDate < now();
       conf.rejected = !!(!conf.myApproved && conf.myRejected);
 
       return conf;
@@ -146,7 +148,7 @@ app.get("/api/upcoming", (req, res) => {
       WHERE s.conferenceId = c.id 
         AND s.userId = u.id 
         AND s.status = "APPROVED"
-        AND c.startDate > ${(new Date()).getTime()} 
+        AND c.startDate > ${now()} 
       GROUP BY c.name`;
 
   query(sql).then(conferences => {
@@ -154,7 +156,7 @@ app.get("/api/upcoming", (req, res) => {
 
     let sql = `SELECT m.*, m.id _id, u.name speakers, "MEETUP" type, CONCAT("https://www.meetup.com/", m.meetupUrlName) url
       FROM meetups m, users u
-      WHERE m.userId = u.id AND m.status = "CONFIRMED" AND m.startDate > ${(new Date()).getTime()}`;
+      WHERE m.userId = u.id AND m.status = "CONFIRMED" AND m.startDate > ${now()}`;
 
     return query(sql);
   }).then(meetups => {
@@ -215,7 +217,7 @@ app.get("/api/conference/:id/submissions", authCheck, (req, res) => {
   let userId;
   let conferenceId = req.params.id;
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
     let sql = `SELECT s.*, t.*, t.id _id 
       FROM submissions s, talks t 
@@ -238,9 +240,12 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   // Zapier stuff
   let zapierParams = {};
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
-    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
+    return queryOne(`SELECT c.*, r.roadmapValue AS region 
+      FROM conferences c, regions r 
+      WHERE c.regionId = r.id 
+        AND c.id = ?`, [conferenceId]);
   }).then(data => {
     conference = data;
 
@@ -300,7 +305,7 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
 
   console.log("Initiating rejection process");
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
     let sql = `UPDATE submissions SET status = "REJECTED" WHERE conferenceId = ? AND userId = ?`;
 
@@ -341,7 +346,7 @@ app.put("/api/conference/:id", authCheck,  (req,  res) => {
 });
 
 app.get("/api/talks", authCheck, (req, res) => {
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     let sql = `SELECT *, id _id FROM talks WHERE userId = ?`;
     return query(sql, [id]);
   }).then(talks => {
@@ -352,7 +357,7 @@ app.get("/api/talks", authCheck, (req, res) => {
 app.post("/api/talk", authCheck, (req, res) => {
   console.log("Create new talk");
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     let sql = `INSERT INTO talks SET ?`;
     let talk = {title: req.body.title, userId: id};
     return query(sql, [talk]);
@@ -386,7 +391,7 @@ app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
 
   console.log("User submitted to conference");
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
     return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
   }).then(conference => {
@@ -407,7 +412,7 @@ app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
 });
 
 app.get("/api/user", authCheck, (req, res) => {
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     return queryOne(`SELECT * FROM users WHERE id = ?`, [id]);
   }).then(profile => {
     res.json(profile);
@@ -417,13 +422,14 @@ app.get("/api/user", authCheck, (req, res) => {
 app.post("/api/user", authCheck, (req, res) => {
   console.log("Updates to user profile", req.body);
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     const userData = {
       auth0Id: getUserId(req.headers)
     };
     if (req.body.name) userData.name = req.body.name;
     if (req.body.picture) userData.picture = req.body.picture;
     if (req.body.bio) userData.bio = req.body.bio;
+    if (req.body.email) userData.email = req.body.email;
     let sql = "";
     if (!id) {
       sql = "INSERT INTO users SET ?";
@@ -435,13 +441,13 @@ app.post("/api/user", authCheck, (req, res) => {
 });
 
 app.get("/api/meetups", authCheck, (req, res) => {
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     let sql = `SELECT m.*, m.id _id 
       FROM meetups m, users u 
       WHERE m.userId = u.id 
         AND (
           m.status = "APPLIED" OR
-          (m.status = "CONFIRMED" and m.startDate > ${(new Date()).getTime()})
+          (m.status = "CONFIRMED" and m.startDate > ${now()})
         )
         AND m.status IN ("APPLIED", "CONFIRMED") 
         AND u.id = ?
@@ -477,7 +483,7 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
 
   console.log("Meetup is approved, starting Zapier sequence");
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     userId = id;
     meetupIncomingData.status = "CONFIRMED";
     meetupIncomingData.startDate = (new Date(meetupIncomingData.startDate)).getTime();
@@ -487,9 +493,10 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     return query(`UPDATE meetups SET ? WHERE id = ?`, [meetupIncomingData, req.params.meetupId]);
   }).then(data => {
     console.log("Updated meetup ", data);
-    let sql = `SELECT m.*, u.name speaker, t.title 
-      FROM meetups m, users u, talks t
+    let sql = `SELECT m.*, u.name speaker, r.roadmapValue AS region, t.title 
+      FROM meetups m, users u, talks t, regions r
       WHERE m.talkId = t.id
+        AND m.regionId = r.id
         AND t.userId = u.id
         AND m.id = ?`;
     return queryOne(sql, [req.params.meetupId]);
@@ -507,12 +514,13 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     zapierParams.attendeeGoal = meetup.attendeeGoal;
     zapierParams.talks = meetup.title;
     zapierParams.speaker = meetup.speaker;
+    zapierParams.region = meetup.region;
 
     return zapierParams;
   }).then(params => {
     console.log("Starting Zapier sequence with params", params);
 
-    Zapier.meetupApproved(params);
+    zapier.meetupApproved(params);
   }).then(() => {
     res.json(meetup);
   });
@@ -521,7 +529,7 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
 app.post("/api/meetup/applied", authCheck, (req, res) => {
   console.log("User applied to meetup");
 
-  getMongoUserId(req.headers).then(id => {
+  getDBUserId(req.headers).then(id => {
     let data = {
       meetupUrlName: req.body.meetupUrlName,
       suggestedDateStart: new Date(req.body.suggestedDateStart).getTime(),
@@ -557,6 +565,120 @@ app.post("/api/meetup/dropped/:id", authCheck, (req, res) => {
   query(sql, [req.params.id]).then(result => {
     res.json(result);
   });
+});
+
+app.get("/api/reports/todo", authCheck, (req, res) => {
+  let reportsTodo = [];
+  let userId;
+  getDBUserId(req.headers).then(id => {
+    userId = id;
+    let sql = `SELECT DISTINCT c.id, c.name, "CONFERENCE" AS "type", r.id AS reportId, c.startDate
+    FROM conferences c
+    JOIN submissions s ON c.id = s.conferenceId
+    JOIN users u ON u.id = s.userId
+    LEFT JOIN reports r ON r.conferenceId = c.id
+    WHERE s.status = "APPROVED"
+      AND r.id IS NULL
+      AND u.id = ?
+      AND c.endDate < ?`;
+
+    return query(sql, [userId, now()]);
+  }).then(result => {
+    reportsTodo = result;
+
+    let sql = `SELECT m.id, m.name, "MEETUP" AS "type", r.id AS reportId, m.startDate
+      FROM meetups m
+      JOIN users u ON u.id = m.userId
+      LEFT JOIN reports r ON r.meetupId = m.id
+      WHERE m.status = "CONFIRMED"
+        AND r.id IS NULL
+        AND u.id = ? 
+        AND m.startDate < ?`;
+
+    return query(sql, [userId, now()]);
+  }).then(result => {
+    reportsTodo = reportsTodo.concat(result);
+
+    res.json(reportsTodo);
+  });
+});
+
+app.post("/api/report", authCheck, (req, res) => {
+  console.log("Creating post-event report");
+
+  getDBUserId(req.headers).then(userId => {
+    let data = req.body;
+    data.userId = userId;
+    return query(`INSERT INTO reports SET ?`, [data]);
+  }).then(result => {
+    let sql = `SELECT r.*, t.type, s.source, reg.region
+      FROM reports r, eventTypes t, eventSources s, regions reg
+      WHERE r.regionId = reg.id 
+        AND r.typeId = t.id
+        AND r.sourceId = s.id
+        AND r.id = ?`;
+    queryOne(sql, [result.insertId]).then(report => {
+      report.formattedDate = helpers.convertTimestampToMMDYY(report.eventDate);
+      report.quarter = helpers.getQuarter(report.eventDate);
+      zapier.report(report);
+
+      res.json(report);
+    });
+  });
+});
+
+app.get("/api/notifications", authCheck, (req, res) => {
+  let reportsTodo = [];
+  let notifications = {
+    reports: 0
+  };
+  let userId;
+  getDBUserId(req.headers).then(id => {
+    userId = id;
+    let sql = `SELECT DISTINCT c.id, c.name, "CONFERENCE" AS "type", r.id AS reportId, c.startDate
+    FROM conferences c
+    JOIN submissions s ON c.id = s.conferenceId
+    JOIN users u ON u.id = s.userId
+    LEFT JOIN reports r ON r.conferenceId = c.id
+    WHERE s.status = "APPROVED"
+      AND r.id IS NULL
+      AND u.id = ?
+      AND c.endDate < ?`;
+
+    return query(sql, [userId, now()]);
+  }).then(result => {
+    reportsTodo = result;
+
+    let sql = `SELECT m.id, m.name, "MEETUP" AS "type", r.id AS reportId, m.startDate
+      FROM meetups m
+      JOIN users u ON u.id = m.userId
+      LEFT JOIN reports r ON r.meetupId = m.id
+      WHERE m.status = "CONFIRMED"
+        AND r.id IS NULL
+        AND u.id = ? 
+        AND m.startDate < ?`;
+
+    return query(sql, [userId, now()]);
+  }).then(result => {
+    reportsTodo = reportsTodo.concat(result);
+    notifications.reports = reportsTodo.length;
+
+    res.json(notifications);
+  });
+});
+
+app.get("/api/regions", authCheck, (req, res) => {
+  let sql = `SELECT * FROM regions`;
+
+  query(sql, []).then(result => res.json(result));
+});
+
+app.get("/api/event-sources", authCheck, (req, res) => {
+  query(`SELECT * FROM eventSources`, []).then(result => res.json(result));
+});
+
+app.get("/api/event-types", authCheck, (req, res) => {
+  query(`SELECT * FROM eventTypes`, []).then(result => res.json(result));
 });
 
 app.get("*", (req, res) => {

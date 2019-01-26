@@ -25,7 +25,7 @@ function getMeetups(latlng) {
     let meetups = data.map((i) => {
       if (i.members > maxMembers) maxMembers = i.members;
       if (i.status !== "active" && i.visibility !== "public") {
-        return undefined;
+        return null;
       }
 
       return {
@@ -36,14 +36,14 @@ function getMeetups(latlng) {
         created: i.created,
         location: `${i.city}, ${i.state}, ${i.country}`,
         coords: { lat: i.lat, lon: i.lon },
-        members: i.members,
+        members: i.members || 0,
         who: i.who,
         nextEvent: i.next_event ? i.next_event : { time: undefined, yes_rsvp_count: 0 },
         lastEvent: i.last_event ? i.last_event : { time: undefined, yes_rsvp_count: 0 },
         urlname: i.urlname,
         score: 0
       };
-    });
+    }).filter(m => m !== null);
 
     meetups = meetups
       .map((m) => {

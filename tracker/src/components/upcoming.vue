@@ -21,7 +21,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="conference in conferences" :key="conference._id">
+            <tr v-for="conference in conferences" :key="conference.type.substring(0,1) + conference._id">
               <td>
                 <router-link v-if="conference.type=='CONFERENCE'" :to="'conference/' + conference._id">{{ conference.name }}</router-link>
                 <router-link v-if="conference.type=='MEETUP'" :to="'meetup/' + conference._id">{{ conference.name }}</router-link>

@@ -18,7 +18,8 @@ export default {
       const user = jwtDecode(getIdToken());
       saveLocalUser({
         name: user.name,
-        picture: user.picture
+        picture: user.picture,
+        email: user.email
       }).then(() => {
         this.$router.push("/upcoming");
       });

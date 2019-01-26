@@ -60,7 +60,7 @@
           </b-col>
           <b-col cols="6">
             <b-form-group label="Region" label-for="region">
-              <b-form-select id="region" v-model="conference.region" :options="regions" class="mb-3" />
+              <b-form-select id="region" v-model="conference.regionId" :options="regions" class="mb-3" />
             </b-form-group>
           </b-col>
         </b-row>
@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import { addConference } from "../utils/conf-api";
+import { addConference, getRegions } from "../utils/conf-api";
 
 export default {
   name: "conference-add-modal",
@@ -97,10 +97,15 @@ export default {
         state: "",
         country: "",
         twitter: "",
-        region: ""
+        regionId: 1
       },
-      regions: ["AMERICAS", "APAC", "EMEA", "Global"]
+      regions: []
     };
+  },
+  mounted() {
+    getRegions().then((regions) => {
+      regions.map(r => this.regions.push({ value: r.id, text: r.region }));
+    });
   },
   methods: {
     handleOk() {
@@ -122,7 +127,6 @@ export default {
       this.conference.state = "";
       this.conference.country = "";
       this.conference.twitter = "";
-      this.conference.region = "";
     },
     handleSubmit() {
       // this.$refs.modal.hide();
