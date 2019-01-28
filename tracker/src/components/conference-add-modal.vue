@@ -19,7 +19,14 @@
         <b-row>
           <b-col cols="6">
             <b-form-group label="Start Date" label-for="startDate">
-              <b-form-input id="startDate" type="date" required placeholder="MM-DD-YYYY" v-model="conference.startDate"></b-form-input>
+              <b-form-input
+                id="startDate"
+                type="date"
+                required
+                placeholder="MM-DD-YYYY"
+                v-model="conference.startDate"
+                @change="startDateChanged"
+              ></b-form-input>
             </b-form-group>
           </b-col>
           <b-col cols="6">
@@ -43,19 +50,19 @@
         <b-row>
           <b-col cols="6">
             <b-form-group label="City" label-for="city">
-              <b-form-input id="city" type="text" required placeholder="Ottawa" v-model="conference.city"></b-form-input>
+              <b-form-input id="city" type="text" required placeholder="City" v-model="conference.city"></b-form-input>
             </b-form-group>
           </b-col>
           <b-col cols="6">
             <b-form-group label="State/Province" label-for="state">
-              <b-form-input id="state" type="text" required placeholder="ON" v-model="conference.state"></b-form-input>
+              <b-form-input id="state" type="text" required placeholder="State/Province" v-model="conference.state"></b-form-input>
             </b-form-group>
           </b-col>
         </b-row>
         <b-row>
           <b-col cols="6">
             <b-form-group label="Country" label-for="country">
-              <b-form-input id="country" type="text" required placeholder="Canada" v-model="conference.country"></b-form-input>
+              <b-form-input id="country" type="text" required placeholder="Country" v-model="conference.country"></b-form-input>
             </b-form-group>
           </b-col>
           <b-col cols="6">
@@ -108,6 +115,9 @@ export default {
     });
   },
   methods: {
+    startDateChanged(startDate) {
+      if (!this.conference.endDate) this.conference.endDate = startDate;
+    },
     handleOk() {
       const formattedConference = Object.assign({}, this.conference);
       formattedConference.startDate = new Date(this.conference.startDate).getTime();
