@@ -17,6 +17,7 @@ import MeetupDetails from "@/components/meetup-details";
 import Profile from "@/components/profile";
 import Reports from "@/components/reports";
 import Report from "@/components/report";
+import Stats from "@/components/stats";
 import { requireAuth } from "../utils/auth";
 
 Vue.use(Router);
@@ -117,6 +118,12 @@ export default new Router({
       path: "/report/:type/:eventId?",
       name: "Report",
       component: Report,
+      beforeEnter: requireAuth
+    },
+    {
+      path: "/stats",
+      name: "Stats",
+      component: Stats,
       beforeEnter: requireAuth
     },
     {

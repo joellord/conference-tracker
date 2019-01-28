@@ -681,6 +681,78 @@ app.get("/api/event-types", authCheck, (req, res) => {
   query(`SELECT * FROM eventTypes`, []).then(result => res.json(result));
 });
 
+app.get("/api/stats", authCheck, (req, res) => {
+  let stats = {};
+  let sql = `SELECT COUNT(id) totalEvents, SUM(developersReached) totalDevelopersReached,
+      SUM(CASE WHEN regionId = 1 THEN developersReached ELSE 0 END) regionAmericas,
+      SUM(CASE WHEN regionId = 2 THEN developersReached ELSE 0 END) regionEMEA,
+      SUM(CASE WHEN regionId = 3 THEN developersReached ELSE 0 END) regionAPAC,
+      SUM(CASE WHEN regionId = 4 THEN developersReached ELSE 0 END) regionGlobal,
+      SUM(CASE WHEN sourceId = 1 THEN developersReached ELSE 0 END) sourceEvangelism,
+      SUM(CASE WHEN sourceId = 2 THEN developersReached ELSE 0 END) sourceAmbExt,
+      SUM(CASE WHEN sourceId = 3 THEN developersReached ELSE 0 END) sourceAmbInt,
+      SUM(CASE WHEN typeId = 1 THEN developersReached ELSE 0 END) typeConference,
+      SUM(CASE WHEN typeId = 2 THEN developersReached ELSE 0 END) typeMeetup,
+      SUM(CASE WHEN typeId = 3 THEN developersReached ELSE 0 END) typeOnlineMeetup,
+      SUM(CASE WHEN typeId = 4 THEN developersReached ELSE 0 END) typeOnlineCourse
+    FROM reports 
+    WHERE eventDate > ?`;
+  let jan1st = (new Date("2019-01-01")).getTime();
+  queryOne(sql, [jan1st]).then(general => {
+    stats.general = general;
+
+    let sql = `SELECT r.id, r.eventName, r.eventDate, r.developersReached, s.source, t.type, reg.region
+      FROM reports r, eventSources s, eventTypes t, regions reg
+      WHERE r.sourceId = s.id 
+        AND r.typeId = t.id
+        AND r.regionId = reg.id
+        AND eventDate > ?`;
+    return query(sql, [jan1st]);
+  }).then(reports => {
+    let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    stats.monthly = months.map(m => {
+      return {
+        month: m,
+        total: 0,
+        americas: 0,
+        emea: 0,
+        apac: 0,
+        global: 0,
+        evangelism: 0,
+        ambext: 0,
+        ambint: 0,
+        conference: 0,
+        meetup: 0,
+        onlinemeetup: 0,
+        onlinecourse: 0
+      };
+    });
+    reports.map(r => {
+      let month = (new Date(r.eventDate)).getMonth();
+      stats.monthly[month].total += r.developersReached;
+      switch(r.region) {
+        case "Americas": stats.monthly[month].americas += r.developersReached; break;
+        case "EMEA": stats.monthly[month].emea += r.developersReached; break;
+        case "APAC": stats.monthly[month].apac += r.developersReached; break;
+        case "Global": stats.monthly[month].global += r.developersReached; break;
+      }
+      switch(r.source) {
+        case "Evangelism": stats.monthly[month].evangelism += r.developersReached; break;
+        case "Ambassador - External": stats.monthly[month].ambext += r.developersReached; break;
+        case "Ambassador - Internal": stats.monthly[month].ambint += r.developersReached; break;
+      }
+      switch(r.type) {
+        case "Conference": stats.monthly[month].conference += r.developersReached; break;
+        case "Meetup": stats.monthly[month].conference += r.developersReached; break;
+        case "Online Meetup": stats.monthly[month].conference += r.developersReached; break;
+        case "Online Course": stats.monthly[month].conference += r.developersReached; break;
+      }
+    });
+
+    res.json(stats);
+  });
+});
+
 app.get("*", (req, res) => {
   res.sendFile(__dirname + "/dist/index.html");
 });

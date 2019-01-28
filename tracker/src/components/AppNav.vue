@@ -16,6 +16,7 @@
           Post-Event Reports
           <b-badge pill variant="warning" v-if="notifications.reports > 0">{{ notifications.reports }}</b-badge>
         </b-nav-item>
+        <b-nav-item to="/stats">Stats</b-nav-item>
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->
