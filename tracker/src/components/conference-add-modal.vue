@@ -81,6 +81,18 @@
 
           </b-col>
         </b-row>
+        <b-row>
+          <b-col cols="6">
+            <b-form-group label="✈️ Covered" label-for="travelCovered">
+              <b-form-select id="travelCovered" v-model="conference.travelCovered" :options="expensesOptions" class="mb-3" />
+            </b-form-group>
+          </b-col>
+          <b-col cols="6">
+            <b-form-group label="🏨 Covered" label-for="lodgingCovered">
+              <b-form-select id="lodgingCovered" v-model="conference.lodgingCovered" :options="expensesOptions" class="mb-3" />
+            </b-form-group>
+          </b-col>
+        </b-row>
       </b-form>
     </b-modal>
   </span>
@@ -88,6 +100,7 @@
 
 <script>
 import { addConference, getRegions } from "../utils/conf-api";
+import { EXPENSES_COVERED } from "../utils/helpers";
 
 export default {
   name: "conference-add-modal",
@@ -106,7 +119,12 @@ export default {
         twitter: "",
         regionId: 1
       },
-      regions: []
+      regions: [],
+      expensesOptions: [
+        { value: EXPENSES_COVERED.NO, text: "No" },
+        { value: EXPENSES_COVERED.YES, text: "Yes" },
+        { value: EXPENSES_COVERED.TBD, text: "TBD / Not sure" }
+      ]
     };
   },
   mounted() {

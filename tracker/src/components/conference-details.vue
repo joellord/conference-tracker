@@ -14,6 +14,19 @@
       to {{ dateFormat(conference.endDate) }}.
     </b-col>
   </b-row>
+  <b-row>
+    <b-col>
+      Expenses Covered?
+    </b-col>
+  </b-row>
+  <b-row>
+    <b-col cols="2" offset="4">
+      ✈️ {{ expensesCovered(conference.travelCovered) }}
+    </b-col>
+    <b-col cols="2">
+      🏨 {{ expensesCovered(conference.lodgingCovered) }}
+    </b-col>
+  </b-row>
   <b-row><b-col><br/></b-col></b-row>
   <b-row>
     <b-col>
@@ -50,7 +63,7 @@
 <script>
 import AppNav from "./AppNav";
 import { getConference } from "../utils/conf-api";
-import { dateFormat } from "../utils/helpers";
+import { dateFormat, expensesCovered } from "../utils/helpers";
 
 export default {
   components: { AppNav },
@@ -66,6 +79,9 @@ export default {
   methods: {
     dateFormat(d) {
       return dateFormat(d);
+    },
+    expensesCovered(val) {
+      return expensesCovered(val);
     },
     getConference() {
       getConference(this.$route.params.conferenceId).then((conference) => {
