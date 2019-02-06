@@ -65,8 +65,9 @@
               <td>
                 <span v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">N/A</span>
                 <span v-if="conference.mySubmissions > 0">
+                  Submitted
                   <router-link v-show="true" :to="'conferences/submitted/' + conference._id">
-                    Submitted
+                    📝
                   </router-link>
                 </span>
                 <span v-if="conference.myApproved">Approved</span>
@@ -94,7 +95,10 @@
                     </span>
                   </li>
                   <li class="list-inline-item" v-if="!conference.myApproved && conference.expired">
-                      Too late! CFP closed on {{ dateFormat(conference.cfpDate) }}
+                      Too late! CFP closed on {{ dateFormat(conference.cfpDate) }}<br/>
+                      <router-link :to="'conferences/submitted/' + conference._id">
+                        I just forgot to add it to conf-tracker (submit anyways)
+                      </router-link>
                   </li>
                 </ul>
               </td>
