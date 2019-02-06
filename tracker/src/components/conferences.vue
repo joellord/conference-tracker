@@ -64,7 +64,11 @@
               </td>
               <td>
                 <span v-if="!conference.mySubmissions && !conference.myApproved && !conference.myRejected">N/A</span>
-                <span v-if="conference.mySubmissions > 0">Submitted</span>
+                <span v-if="conference.mySubmissions > 0">
+                  <router-link v-show="true" :to="'conferences/submitted/' + conference._id">
+                    Submitted
+                  </router-link>
+                </span>
                 <span v-if="conference.myApproved">Approved</span>
                 <span v-if="!conference.myApproved && conference.myRejected">Rejected</span>
               </td>

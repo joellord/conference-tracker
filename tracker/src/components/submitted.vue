@@ -41,9 +41,10 @@
 </template>
 
 <script>
+import Vue from "vue";
 import AppNav from "./AppNav";
 import TalkAddModal from "./talk-add-modal";
-import { getMyTalks, getConference, addSubmissions } from "../utils/conf-api";
+import { getMyTalks, getConference, addSubmissions, getMySubmissions } from "../utils/conf-api";
 
 export default {
   name: "submitted",
@@ -62,6 +63,9 @@ export default {
     getMyTalks() {
       getMyTalks().then((talks) => {
         this.talks = talks;
+        return getMySubmissions(this.$route.params.conferenceId);
+      }).then((submissions) => {
+        submissions.map(s => Vue.set(this.talks.find(t => t.id === s.id), "submitted", true));
       });
     },
     getConferenceDetails() {

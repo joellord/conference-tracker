@@ -393,14 +393,24 @@ app.post("/api/conference/:id/submissions", authCheck, (req, res) => {
 
   getDBUserId(req.headers).then(id => {
     userId = id;
-    return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
-  }).then(conference => {
+    return query(`SELECT talkId FROM submissions WHERE userId = ? AND conferenceId = ?`, [userId, conferenceId]);
+  }).then(submittedTalks => {
     let inserts = [];
+    let talks = submittedTalks.map(t => t.talkId);
 
     req.body.map(submission => {
-      let data = {talkId: submission.talkId, userId: userId, status: "NULL", conferenceId: conferenceId};
-      console.log("Submitting", data);
-      inserts.push(query(`INSERT INTO submissions SET ?`, [data]));
+      if (talks.indexOf(submission.talkId) === -1) {
+        let data = {talkId: submission.talkId, userId: userId, status: "NULL", conferenceId: conferenceId};
+        console.log("Submitting", data);
+        inserts.push(query(`INSERT INTO submissions SET ?`, [data]));
+      }
+    });
+
+    talks.map(t => {
+      if (!req.body.find(s => s.talkId === t)) {
+        console.log("Removing submission " + t);
+        inserts.push(query(`DELETE FROM submissions WHERE conferenceId = ? AND userId = ? and talkId = ?`, [conferenceId, userId, t]));
+      }
     });
 
     return Promise.all(inserts);
