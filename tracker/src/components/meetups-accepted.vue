@@ -79,7 +79,7 @@ export default {
       });
     },
     saveAcceptance() {
-      let formattedMeetup = Object.assign({}, this.meetup);
+      const formattedMeetup = Object.assign({}, this.meetup);
       formattedMeetup.startDate = new Date(formattedMeetup.startDate).getTime();
       confirmMeetup(this.$route.params.meetupId, formattedMeetup).then(() => this.$router.push("/meetups"));
     }
