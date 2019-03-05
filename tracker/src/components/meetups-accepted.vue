@@ -18,8 +18,8 @@
                          v-model="meetup.talkId">
           </b-form-select>
         </b-form-group>
-        <b-form-group id="startDate" label="When are you presenting?" label-for="startDate" >
-          <b-form-input id="startDate" type="date" v-model="meetup.startDate" />
+        <b-form-group id="StartDate" label="When are you presenting?" label-for="startDate" >
+          <b-form-input id="startDate" type="date" required placeholder="MM-DD-YYYY" v-model="meetup.startDate"></b-form-input>
         </b-form-group>
         <b-form-group label="Region" label-for="region">
           <b-form-select id="region" v-model="meetup.regionId" :options="regions" />
@@ -49,7 +49,12 @@ export default {
     return {
       talks: [],
       talkOptions: [],
-      meetup: {},
+      meetup: {
+        talkId: "",
+        startDate: "",
+        regionId: "",
+        attendeeGoal: ""
+      },
       regions: []
     };
   },
@@ -74,7 +79,9 @@ export default {
       });
     },
     saveAcceptance() {
-      confirmMeetup(this.$route.params.meetupId, this.meetup).then(() => this.$router.push("/meetups"));
+      let formattedMeetup = Object.assign({}, this.meetup);
+      formattedMeetup.startDate = new Date(formattedMeetup.startDate).getTime();
+      confirmMeetup(this.$route.params.meetupId, formattedMeetup).then(() => this.$router.push("/meetups"));
     }
   }
 };

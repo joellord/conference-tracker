@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getAccessToken, getUserParam } from "./auth";
 
-const BASE_URL = "https://conf-tracker.herokuapp.com";
-// const BASE_URL = "http://localhost:3333";
+// const BASE_URL = "https://conf-tracker.herokuapp.com";
+const BASE_URL = "http://localhost:3333";
 
 
 function getHeaders() {
@@ -124,7 +124,6 @@ function rejectedMeetup(id) {
 
 function confirmMeetup(id, data) {
   const url = `${BASE_URL}/api/meetup/approved/${id}`;
-  data.startDate = new Date(data.startDate);
   return axios.put(url, data, getHeaders()).then(resp => resp.data);
 }
 

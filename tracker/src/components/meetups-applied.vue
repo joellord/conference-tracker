@@ -32,7 +32,8 @@
                           type="date"
                           required
                           placeholder="from"
-                          v-model="start">
+                          v-model="start"
+                          @change="startDateChanged">
             </b-form-input>
             And
             <b-form-input id="suggestedDateEnd"
@@ -73,6 +74,9 @@ export default {
     this.getMeetup();
   },
   methods: {
+    startDateChanged(start) {
+      if (!this.end) this.end = start;
+    },
     getMeetup() {
       getMeetup(this.$route.params.urlname).then((meetup) => {
         this.meetup = meetup;

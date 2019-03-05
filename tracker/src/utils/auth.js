@@ -125,7 +125,6 @@ export function autoRenew() {
 
 // Get and store access_token in local storage
 export function setAccessToken() {
-  localStorage.clear();
   const accessToken = getParameterByName("access_token");
   tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   autoRenew();

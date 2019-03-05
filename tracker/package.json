@@ -14,7 +14,7 @@
     "build": "node build/build.js"
   },
   "dependencies": {
-    "auth0-js": "^9.3.3",
+    "auth0-js": "^9.10.0",
     "axios": "^0.18.0",
     "bootstrap": "^4.0.0",
     "bootstrap-vue": "^2.0.0-rc.2",

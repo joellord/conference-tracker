@@ -5,11 +5,10 @@ const jwks = require("jwks-rsa");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwtDecode = require("jwt-decode");
-const axios = require("axios");
 
 const mysql = require("mysql");
 
-const zapier = require("./server-utils/zapier");
+const events = require("./server-utils/events");
 const helpers = require("./server-utils/helpers");
 
 const now = helpers.now;
@@ -234,11 +233,9 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
   let userId;
   let conference;
   let conferenceId = req.params.id;
+  let hookData = {};
 
-  console.log("Accepted at conference, starting Zapier sequence");
-
-  // Zapier stuff
-  let zapierParams = {};
+  console.log("Accepted at conference, starting accepted sequence");
 
   getDBUserId(req.headers).then(id => {
     userId = id;
@@ -262,39 +259,22 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
 
     return query(sql, [conferenceId, userId, approvedSubmissions]);
   }).catch((err) => console.log("Error saving approvals", err)).then(_ => {
-    zapierParams.conferenceId = conference.id;
-    zapierParams.conference = conference.name;
-    zapierParams.start = helpers.dateFormat(conference.startDate);
-    zapierParams.end = helpers.dateFormat(conference.endDate);
-    zapierParams.dates = conference.endDate ? `${zapierParams.start} to ${zapierParams.end}` : zapierParams.start;
-    zapierParams.twitter = conference.twitter;
-    zapierParams.website = conference.url.match(/\#/) ? conference.url.substr(0, conference.url.indexOf("#")) : conference.url;
-    zapierParams.location = conference.city + (conference.state ? ", " + conference.state : "") + ", " + conference.country;
-    zapierParams.talks = "";
-    zapierParams.overview = conference.overview;
-    zapierParams.attendeeGoal = conference.attendeeGoal;
-    zapierParams.relationshipGoal = conference.relationshipGoal;
-    zapierParams.region = conference.region;
-
-    let sql = `SELECT t.* FROM talks t, submissions s WHERE s.talkId = t.id AND t.id IN (?) AND s.conferenceId = ?`;
-    return query(sql, [approvedSubmissions, conferenceId]);
-  }).then(talks => {
-    talks.map((talk, index) => {
-      zapierParams[`talk${index}`] = talk.title;
-      zapierParams.talks += talk.title + "\r\n";
-    });
-    zapierParams.talks = zapierParams.talks.substr(0, zapierParams.talks.length - 2);
-
-    let sql = `SELECT * FROM users WHERE id = ?`;
-    return queryOne(sql, [userId]);
-  }).then(user => {
-    zapierParams.speaker = user.name;
-    zapierParams.communityUsername = user.communityUsername || user.name;
-  }).then(() => {
-    console.log("Starting Zapier with params", zapierParams);
-
-    return zapier.approved(zapierParams);
-  }).catch((err) => console.log("Error sending to Zapier", err)).then(() => {
+    return queryOne(`SELECT c.id, c.name, c.startDate, c.endDate, c.city, c.state, c.country, c.url, c.twitter, 
+      c.relationshipGoal, c.attendeeGoal, c.overview, r.region, r.roadmapValue AS regionRoadmapValue 
+      FROM conferences c, regions r 
+      WHERE c.regionId = r.id AND c.id = ?`, [conference.id]);
+  }).then(confDetails => {
+    hookData.conference = Object.assign({}, confDetails);
+    return query(`SELECT t.id, t.title, t.abstract, t.notes 
+      FROM talks t, submissions s 
+      WHERE s.talkId = t.id AND t.id IN (?) AND s.conferenceId = ?`, [approvedSubmissions, conferenceId]);
+  }).then(talkDetails => {
+    hookData.talks = talkDetails.map(t => Object.assign({}, t));
+    return queryOne(`SELECT u.name, u.picture, u.bio, u.communityUsername, u.email FROM users u WHERE u.id = ?`, [userId]);
+  }).then(speakerDetails => {
+    hookData.speaker = Object.assign({}, speakerDetails);
+    events.acceptedAtConference(hookData.conference, hookData.talks, hookData.speaker);
+  }).catch((err) => console.log("Error sending to external hook", err)).then(() => {
     res.json(conference);
   });
 });
@@ -302,6 +282,7 @@ app.post("/api/conference/:id/approvals", authCheck, (req, res) => {
 app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
   let userId;
   let conferenceId = req.params.id;
+  let hookData = {};
 
   console.log("Initiating rejection process");
 
@@ -313,6 +294,18 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
   }).then(_ => {
     return queryOne(`SELECT * FROM conferences WHERE id = ?`, [conferenceId]);
   }).then(conference => {
+    hookData.conference = conference;
+
+    return query(`SELECT * FROM talks WHERE id IN (SELECT * FROM submissions WHERE conferenceId = ? and userId = ?)`, [conferenceId, userId]);
+  }).then(talks => {
+    hookData.talks = talks;
+
+    return queryOne(`SELECT * FROM users WHERE id = ?`, [userId]);
+  }).then(user => {
+    hookData.speaker = user;
+
+    events.rejectedFromConference(hookData.conference, hookData.talks, hookData.speaker);
+
     res.json(conference);
   });
 });
@@ -487,11 +480,10 @@ app.get("/api/meetup/:meetupId", authCheck, (req, res) => {
 
 app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
   let userId;
-  let zapierParams = {};
-  let meetup = {};
+  let hookData = {};
   let meetupIncomingData = req.body;
 
-  console.log("Meetup is approved, starting Zapier sequence");
+  console.log("Meetup is approved, starting meetup accepted sequence");
 
   getDBUserId(req.headers).then(id => {
     userId = id;
@@ -503,36 +495,30 @@ app.put("/api/meetup/approved/:meetupId", authCheck,  (req,  res) => {
     return query(`UPDATE meetups SET ? WHERE id = ?`, [meetupIncomingData, req.params.meetupId]);
   }).then(data => {
     console.log("Updated meetup ", data);
-    let sql = `SELECT m.*, u.name speaker, r.roadmapValue AS region, t.title 
+    let sql = `SELECT m.*, u.name speaker, r.roadmapValue AS region, r.roadmapValue AS regionRoadmapValue, t.title 
       FROM meetups m, users u, talks t, regions r
       WHERE m.talkId = t.id
         AND m.regionId = r.id
         AND t.userId = u.id
         AND m.id = ?`;
     return queryOne(sql, [req.params.meetupId]);
-  }).then(m => {
-    meetup = m;
+  }).then(meetup => {
+    hookData.meetup = meetup;
 
-    console.log("Preparing zapier params", zapierParams);
+    return queryOne(`SELECT * FROM users WHERE id = ?`, [userId]);
+  }).then(speaker => {
+    hookData.speaker = speaker;
 
-    zapierParams.meetupId = meetup.id;
-    zapierParams.conference = meetup.name;
-    zapierParams.start = helpers.dateFormat(meetup.startDate);
-    zapierParams.dates = zapierParams.start;
-    zapierParams.website = `https://meetup.com/${meetup.meetupUrlName}`;
-    zapierParams.location = meetup.location;
-    zapierParams.attendeeGoal = meetup.attendeeGoal;
-    zapierParams.talks = meetup.title;
-    zapierParams.speaker = meetup.speaker;
-    zapierParams.region = meetup.region;
+    return queryOne(`SELECT * FROM talks WHERE id = ?`, [hookData.meetup.talkId]);
+  }).then(talk => {
+    hookData.talk = talk;
 
-    return zapierParams;
-  }).then(params => {
-    console.log("Starting Zapier sequence with params", params);
-
-    zapier.meetupApproved(params);
+    console.log("Starting accepted hook with data ", hookData);
+    events.acceptedAtMeetup(hookData.meetup, hookData.talk, hookData.speaker);
   }).then(() => {
-    res.json(meetup);
+    res.json(hookData.meetup);
+  }).catch(err => {
+    console.log("Error in the accepted at meetup hook", err);
   });
 });
 
@@ -628,9 +614,7 @@ app.post("/api/report", authCheck, (req, res) => {
         AND r.sourceId = s.id
         AND r.id = ?`;
     queryOne(sql, [result.insertId]).then(report => {
-      report.formattedDate = helpers.convertTimestampToMMDYY(report.eventDate);
-      report.quarter = helpers.getQuarter(report.eventDate);
-      zapier.report(report);
+      events.postConferenceReport(report);
 
       res.json(report);
     });

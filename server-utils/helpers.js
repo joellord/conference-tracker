@@ -7,6 +7,8 @@ function dateFormat(d) {
 
 function convertTimestampToMMDYY(timestamp) {
   let date = new Date(timestamp);
+  const minutesOffset = (new Date()).getTimezoneOffset();
+  date.setMinutes(date.getMinutes() + minutesOffset);
   let mm = date.getMonth() + 1;
   mm = (mm < 10) ? "0" + mm : mm.toString();
   let d = date.getDate().toString();
@@ -32,9 +34,18 @@ function getQuarter(timestamp) {
   return "Q4";
 }
 
+function buildUrl(url, params) {
+  let queryParams = "";
+  for (let key in params) {
+    queryParams += `${key}=${encodeURIComponent(params[key])}&`;
+  }
+  return `${url}?${queryParams}`;
+}
+
 module.exports = {
   dateFormat: dateFormat,
   now: now,
   convertTimestampToMMDYY: convertTimestampToMMDYY,
-  getQuarter: getQuarter
+  getQuarter: getQuarter,
+  buildUrl: buildUrl
 };
