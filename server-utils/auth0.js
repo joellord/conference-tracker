@@ -253,10 +253,10 @@ function addToDevelopersReachedSheet(r) {
     eventName: r.eventName,
     type: r.type,
     source: r.source,
-    formattedDate: helpers.convertTimestampToMMDYY(c.eventDate),
+    formattedDate: helpers.convertTimestampToMMDYY(r.eventDate),
     developersReached: r.developersReached,
     region: r.region,
-    quarter: helpers.getQuarter(c.eventDate)
+    quarter: helpers.getQuarter(r.eventDate)
   };
 
   let hook = buildUrl(url, data);
