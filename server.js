@@ -296,7 +296,7 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
   }).then(conference => {
     hookData.conference = conference;
 
-    return query(`SELECT * FROM talks WHERE id IN (SELECT * FROM submissions WHERE conferenceId = ? and userId = ?)`, [conferenceId, userId]);
+    return query(`SELECT * FROM talks WHERE id IN (SELECT talkId FROM submissions WHERE conferenceId = ? and userId = ?)`, [conferenceId, userId]);
   }).then(talks => {
     hookData.talks = talks;
 
@@ -306,7 +306,7 @@ app.post("/api/conference/:id/rejected", authCheck, (req, res) => {
 
     events.rejectedFromConference(hookData.conference, hookData.talks, hookData.speaker);
 
-    res.json(conference);
+    res.json(hookData.conference);
   });
 });
 
