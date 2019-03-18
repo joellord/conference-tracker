@@ -28,7 +28,15 @@
             <input type="checkbox" aria-label="Checkbox if you submitted" :id="'talk-' + talk.id" v-model="talk.submitted">
           </b-input-group-prepend>
           <b-form-input type="text" aria-label="Title of talk" readonly :value="talk.title"/>
+
+          <b-input-group-append is-text><span @click="expand" :id="'accordion' + talk.id">...</span></b-input-group-append>
+
         </b-input-group>
+        <b-collapse :id="'accordion' + talk.id" accordion="my-accordion" role="tabpanel">
+          <b-card :title="talk.title">
+            <b-card-text>{{ talk.abstract }}</b-card-text>
+          </b-card>
+        </b-collapse>
       </b-col>
     </b-row>
 
@@ -79,6 +87,9 @@ export default {
         return { talkId };
       });
       addSubmissions(this.conference._id, submissions).then(() => this.$router.push("/conferences"));
+    },
+    expand(event) {
+      this.$root.$emit("bv::toggle::collapse", event.currentTarget.id);
     }
   }
 };
