@@ -28,12 +28,12 @@
     </b-col>
   </b-row>
   <b-row><b-col><br/></b-col></b-row>
-  <b-row>
+  <b-row v-if="canSeeList">
     <b-col>
       <h4>Submissions</h4>
     </b-col>
   </b-row>
-  <b-row>
+  <b-row v-if="canSeeList">
     <b-col>
       <table class="table table-striped">
         <thead class="thead-dark">
@@ -64,13 +64,15 @@
 import AppNav from "./AppNav";
 import { getConference } from "../utils/conf-api";
 import { dateFormat, expensesCovered } from "../utils/helpers";
+import { isPermissionEnabled, PERMISSIONS } from "../utils/acl";
 
 export default {
   components: { AppNav },
   name: "conferenceDetails",
   data() {
     return {
-      conference: {}
+      conference: {},
+      canSeeList: isPermissionEnabled(PERMISSIONS.CONFERENCE.SUBMISSIONS)
     };
   },
   mounted() {

@@ -10,7 +10,7 @@
 
 <script>
 import AppNav from "./AppNav";
-import { isLoggedIn, login, renewToken, autoRenew } from "../utils/auth";
+import { isLoggedIn, login, renewToken } from "../utils/auth";
 
 export default {
   components: { AppNav },
@@ -23,7 +23,6 @@ export default {
       this.$router.push("/upcoming");
     } else {
       renewToken(() => {
-        autoRenew();
         this.$router.push("/upcoming");
       });
     }

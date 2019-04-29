@@ -1,6 +1,8 @@
 import decode from "jwt-decode";
 import auth0 from "auth0-js";
 
+import { setPermissions } from "./acl";
+
 import creds from "./credentials";
 
 const ID_TOKEN_KEY = "id_token";
@@ -76,17 +78,6 @@ export function isLoggedIn() {
   return !!idToken && !isTokenExpired(idToken);
 }
 
-export function requireAuth(to, from, next) {
-  if (!isLoggedIn()) {
-    next({
-      path: "/",
-      query: { redirect: to.fullPath }
-    });
-  } else {
-    next();
-  }
-}
-
 export function getAccessToken() {
   return tokenStorage.getItem(ACCESS_TOKEN_KEY);
 }
@@ -97,43 +88,38 @@ function getParameterByName(name) {
   return match && decodeURIComponent(match[1].replace(/\+/g, " "));
 }
 
+// Get and store access_token in local storage
+export function setAccessToken(token) {
+  const accessToken = token || getParameterByName("access_token");
+  tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  const decodedToken = decode(accessToken);
+  setPermissions(decodedToken.permissions);
+}
+
+// Get and store id_token in local storage
+export function setIdToken(token) {
+  const idToken = token || getParameterByName("id_token");
+  tokenStorage.setItem(ID_TOKEN_KEY, idToken);
+}
+
 export function renewToken(cb) {
   auth.checkSession({}, (err, result) => {
     if (err) {
       return;
     }
-    tokenStorage.setItem(ID_TOKEN_KEY, result.idToken);
-    tokenStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken);
+    setIdToken(result.idToken);
+    setAccessToken(result.accessToken);
+
+    const decoded = decode(result.accessToken);
+    const expiry = decoded.exp * 1000;
+    const delay = expiry - (new Date()).getTime();
+
+    tokenRenewalTimeout = setTimeout(renewToken, delay - 60000);
 
     if (cb) {
       cb();
     }
   });
-}
-
-export function autoRenew() {
-  const decoded = decode(tokenStorage.getItem(ACCESS_TOKEN_KEY));
-  const expiry = decoded.exp * 1000;
-  const delay = expiry - new Date();
-
-  // Schedule an auto renew, one minute before expiry
-  tokenRenewalTimeout = setTimeout(() => {
-    renewToken();
-    autoRenew();
-  }, delay - 60000);
-}
-
-// Get and store access_token in local storage
-export function setAccessToken() {
-  const accessToken = getParameterByName("access_token");
-  tokenStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  autoRenew();
-}
-
-// Get and store id_token in local storage
-export function setIdToken() {
-  const idToken = getParameterByName("id_token");
-  tokenStorage.setItem(ID_TOKEN_KEY, idToken);
 }
 
 export function getUserParam(param) {

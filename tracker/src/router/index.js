@@ -1,6 +1,8 @@
 import Vue from "vue";
 import Router from "vue-router";
 import Welcome from "@/components/welcome";
+import NeedInvite from "@/components/need-invite";
+import Unauthorized from "@/components/unauthorized";
 import Conferences from "@/components/conferences";
 import ConferenceDetails from "@/components/conference-details";
 import Upcoming from "@/components/upcoming";
@@ -18,9 +20,33 @@ import Profile from "@/components/profile";
 import Reports from "@/components/reports";
 import Report from "@/components/report";
 import Stats from "@/components/stats";
-import { requireAuth } from "../utils/auth";
+
+import { isLoggedIn } from "../utils/auth";
+import { isGuest, isPermissionEnabled, PERMISSIONS } from "../utils/acl";
 
 Vue.use(Router);
+
+function requireAuth(to, from, next) {
+  if (!isLoggedIn()) {
+    return next({
+      path: "/"
+    });
+  }
+
+  if (isGuest()) {
+    return next({
+      path: "/needinvite"
+    });
+  }
+
+  if (to.meta.requiredPermission && !isPermissionEnabled(to.meta.requiredPermission)) {
+    return next({
+      path: "/unauthorized"
+    });
+  }
+
+  return next();
+}
 
 export default new Router({
   mode: "history",
@@ -31,28 +57,50 @@ export default new Router({
       component: Welcome
     },
     {
+      path: "/needinvite",
+      name: "NeedInvite",
+      component: NeedInvite
+    },
+    {
+      path: "/unauthorized",
+      name: "Unauthorized",
+      component: Unauthorized
+    },
+    {
       path: "/conferences",
       name: "Conferences",
       component: Conferences,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.CONFERENCE.LIST
+      }
     },
     {
       path: "/conference/:conferenceId",
       name: "ConferenceDetails",
       component: ConferenceDetails,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.CONFERENCE.DETAILS
+      }
     },
     {
       path: "/conferences/submitted/:conferenceId",
       name: "Submitted",
       component: Submitted,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.CONFERENCE.SUBMIT
+      }
     },
     {
       path: "/conferences/approved/:conferenceId",
       name: "Approved",
       component: Approved,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.CONFERENCE.SUBMIT
+      }
     },
     {
       path: "/upcoming",
@@ -64,67 +112,100 @@ export default new Router({
       path: "/talks",
       name: "Talks",
       component: Talks,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.TALK.LIST
+      }
     },
     {
       path: "/talk/:talkId",
       name: "Talk",
       component: Talk,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.TALK.LIST
+      }
     },
     {
       path: "/profile",
       name: "Profile",
       component: Profile,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.PROFILE.ALL
+      }
     },
     {
       path: "/meetups",
       name: "Meetups",
       component: Meetups,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.MEETUP.LIST
+      }
     },
     {
       path: "/meetups/find",
       name: "MeetupFind",
       component: MeetupsFind,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.MEETUP.FIND
+      }
     },
     {
       path: "/meetups/applied/:urlname",
       name: "MeetupsApplied",
       component: MeetupsApplied,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.MEETUP.FIND
+      }
     },
     {
       path: "/meetups/accepted/:meetupId",
       name: "MeetupsAccepted",
       component: MeetupsAccepted,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.MEETUP.FIND
+      }
     },
     {
       path: "/meetup/:meetupId",
       name: "MeetupDetails",
       component: MeetupDetails,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.MEETUP.DETAILS
+      }
     },
     {
       path: "/reports",
       name: "Reports",
       component: Reports,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.REPORT.ADD
+      }
     },
     {
       path: "/report/:type/:eventId?",
       name: "Report",
       component: Report,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.REPORT.ADD
+      }
     },
     {
       path: "/stats",
       name: "Stats",
       component: Stats,
-      beforeEnter: requireAuth
+      beforeEnter: requireAuth,
+      meta: {
+        requiredPermission: PERMISSIONS.STATS.READ
+      }
     },
     {
       path: "/callback",
