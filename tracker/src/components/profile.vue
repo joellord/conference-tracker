@@ -24,6 +24,25 @@
           </b-form>
         </b-col>
       </b-row>
+      <b-row>
+        <b-col>
+          <b-form>
+            <label for="communityUsername">Auth0 Community Username:</label>
+            <b-form-input
+              id="communityUsername"
+              v-model="communityUsername"
+              :formatter="communityUsernameFormatter"
+              placeholder="@username"
+              name="communityUsername"
+              aria-describedby="communityUsernameFormatterHelp"
+            ></b-form-input>
+            <b-form-text id="communityUsernameFormatterHelp">
+              Enter you Auth0 Community (<a href="https://commuity.auth0.com">https://community.auth0.com</a>)
+              username including the "@"
+            </b-form-text>
+          </b-form>
+        </b-col>
+      </b-row>
     </div>
 
     <div v-if="!editMode" class="profileData">
@@ -38,6 +57,16 @@
         </b-col>
         <b-col>
           <span class="copyBtn" v-clipboard:copy="bio">📋</span>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col>
+          <span class="label">Auth0 Community Username</span>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col>
+          <p>{{ communityUsername }}</p>
         </b-col>
       </b-row>
     </div>
@@ -57,6 +86,7 @@ export default {
   data() {
     return {
       bio: "",
+      communityUsername: "",
       editMode: false
     };
   },
@@ -65,7 +95,7 @@ export default {
   },
   methods: {
     saveChanges() {
-      saveLocalUser({ bio: this.bio }).then(() => {
+      saveLocalUser({ bio: this.bio, communityUsername: this.communityUsername }).then(() => {
         this.editMode = false;
       });
     },
@@ -79,6 +109,7 @@ export default {
     getProfile() {
       getLocalUser().then((profile) => {
         this.bio = profile.bio;
+        this.communityUsername = profile.communityUsername;
       });
     }
   }

@@ -436,6 +436,7 @@ app.post("/api/user", authCheck, (req, res) => {
     if (req.body.picture) userData.picture = req.body.picture;
     if (req.body.bio) userData.bio = req.body.bio;
     if (req.body.email) userData.email = req.body.email;
+    if (req.body.communityUsername) userData. communityUsername = req.body.communityUsername;
     let sql = "";
     if (!id) {
       sql = "INSERT INTO users SET ?";
