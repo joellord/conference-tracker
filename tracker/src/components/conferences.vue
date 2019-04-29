@@ -70,7 +70,7 @@
                     📝
                   </router-link>
                 </span>
-                <span v-if="conference.myApproved">Approved</span>
+                <span v-if="conference.myApproved">Accepted</span>
                 <span v-if="!conference.myApproved && conference.myRejected">Rejected</span>
               </td>
               <td>
@@ -80,7 +80,7 @@
                   </li>
                   <li class="list-inline-item" v-if="conference.mySubmissions">
                     <router-link :to="'conferences/approved/' + conference._id">
-                      <b-btn variant="sm" class="btn-success">Approved</b-btn>
+                      <b-btn variant="sm" class="btn-success">Accepted</b-btn>
                     </router-link>
                     <b-btn variant="sm" class="btn-danger" @click="rejectConference(conference._id)">Rejected</b-btn>
                   </li>
