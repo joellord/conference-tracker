@@ -3,7 +3,7 @@ let permissions = [];
 const PERMISSIONS = {
   CONFERENCE: {
     LIST: "conference:list",
-    SUBMIT: "conference:submit:",
+    SUBMIT: "conference:submit",
     ADD: "conference:add",
     DETAILS: "conference:details",
     SUBMISSIONS: "conference:submissions"
