@@ -20,6 +20,10 @@ function now() {
   return (new Date()).getTime();
 }
 
+function yesterday() {
+  return now() - 24*60*60*1000;
+}
+
 function getQuarter(timestamp) {
   let d = new Date(timestamp);
   if (d.getMonth() < 3) {
@@ -43,9 +47,10 @@ function buildUrl(url, params) {
 }
 
 module.exports = {
-  dateFormat: dateFormat,
-  now: now,
-  convertTimestampToMMDYY: convertTimestampToMMDYY,
-  getQuarter: getQuarter,
-  buildUrl: buildUrl
+  dateFormat,
+  now,
+  yesterday,
+  convertTimestampToMMDYY,
+  getQuarter,
+  buildUrl
 };

@@ -13,6 +13,7 @@ const helpers = require("./server-utils/helpers");
 const expressPermissions = require("express-jwt-permissions");
 
 const now = helpers.now;
+const yesterday = helpers.yesterday;
 
 let creds;
 
@@ -124,7 +125,7 @@ app.get("/api/conferences", [authCheck, guard.check("conference:list")], (req, r
   }).then(conferences => {
     let confs = conferences.map(conference => {
       let conf = Object.assign({}, conference);
-      conf.expired = conf.mySubmissions === 0 && conference.cfpDate < now();
+      conf.expired = conf.mySubmissions === 0 && conference.cfpDate < yesterday();
       conf.rejected = !!(!conf.myApproved && conf.myRejected);
 
       return conf;
