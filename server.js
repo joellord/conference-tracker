@@ -165,6 +165,13 @@ app.get("/api/upcoming", (req, res) => {
   }).then(meetups => {
     upcoming = upcoming.concat(meetups);
 
+    upcoming = upcoming.map(u => {
+      if (u.location) return u;
+
+      u.location  = u.state ? `${u.city}, ${u.state}, ${u.country}` : `${u.city}, ${u.country}`;
+      return u;
+    });
+
     upcoming = upcoming.sort((a, b) => {
       if (a.startDate < b.startDate) return -1;
       return 1;

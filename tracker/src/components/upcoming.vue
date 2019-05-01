@@ -16,6 +16,7 @@
               <th scope="col">Event Name</th>
               <th scope="col">Type</th>
               <th scope="col">Dates</th>
+              <th scope="col">Location</th>
               <th scope="col">Speakers</th>
               <th scope="col">Actions</th>
             </tr>
@@ -34,6 +35,9 @@
               <td>
                 {{ dateFormat(conference.startDate) }}
                 <span v-if="conference.endDate && conference.startDate != conference.endDate"> to {{ dateFormat(conference.endDate) }}</span>
+              </td>
+              <td>
+                {{ conference.location }}
               </td>
               <td>
                 {{ conference.speakers }}
