@@ -142,7 +142,7 @@ app.get("/api/conferences", [authCheck, guard.check("conference:list")], (req, r
   });
 });
 
-app.get("/api/upcoming", (req, res) => {
+app.get("/api/upcoming/:week?", (req, res) => {
   let users = [];
   let upcoming = [];
 
@@ -152,6 +152,7 @@ app.get("/api/upcoming", (req, res) => {
         AND s.userId = u.id 
         AND s.status = "APPROVED"
         AND c.startDate > ${now()} 
+        ${req.params.week ? 'AND c.startDate < ' + (now() + 7*24*60*60*1000) : ''}
       GROUP BY c.name`;
 
   query(sql).then(conferences => {
@@ -159,7 +160,8 @@ app.get("/api/upcoming", (req, res) => {
 
     let sql = `SELECT m.*, m.id _id, u.name speakers, "MEETUP" type, CONCAT("https://www.meetup.com/", m.meetupUrlName) url
       FROM meetups m, users u
-      WHERE m.userId = u.id AND m.status = "CONFIRMED" AND m.startDate > ${now()}`;
+      WHERE m.userId = u.id AND m.status = "CONFIRMED" AND m.startDate > ${now()} 
+      ${req.params.week ? 'AND m.startDate < ' + (now() + 7*24*60*60*1000) : ''}`;
 
     return query(sql);
   }).then(meetups => {
