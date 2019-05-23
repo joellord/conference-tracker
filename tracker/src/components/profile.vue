@@ -37,7 +37,7 @@
               aria-describedby="communityUsernameFormatterHelp"
             ></b-form-input>
             <b-form-text id="communityUsernameFormatterHelp">
-              Enter you Auth0 Community (<a href="https://commuity.auth0.com">https://community.auth0.com</a>)
+              Enter you Auth0 Community (<a href="https://community.auth0.com">https://community.auth0.com</a>)
               username including the "@"
             </b-form-text>
           </b-form>
