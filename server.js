@@ -151,7 +151,7 @@ app.get("/api/upcoming/:week?", (req, res) => {
       WHERE s.conferenceId = c.id 
         AND s.userId = u.id 
         AND s.status = "APPROVED"
-        AND c.startDate > ${now()} 
+        AND c.startDate > ${now() - 24*60*60*1000} 
         ${req.params.week ? 'AND c.startDate < ' + (now() + 7*24*60*60*1000) : ''}
       GROUP BY c.name`;
 
