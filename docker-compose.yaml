@@ -1,0 +1,34 @@
+version: '3'
+services:
+  server:
+    image: joellord/ctrkr-server
+    build:
+      context: "./server"
+    environment:
+      NODE_ENV: prod
+      PORT: 8080
+      OLD_DB_STRING: "mysql://xtyqpwqtsuun3fw8:xw000ljd19irc493@icopoghru9oezxh8.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/pnm79xb34yxo94c7"
+      DB_CONN_STRING: "mysql://user:password@database:3306/mydb"
+  front:
+    image: joellord/ctrkr-front
+    build:
+      context: "./tracker"
+      args:
+        clientId: "wSC1eR3087oo6wKt43TsNtWpbANLVBK8"
+        domain: "conf-tracker.auth0.com"
+        audience: "http://conf-tracker.com"
+        api: "server"
+    environment:
+      SERVER: "server"
+    ports:
+      - "80:8080"
+  database:
+    image: mysql
+    user: "1000:50"
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "password"
+      MYSQL_DATABASE: "mydb"
+    volumes:
+      - "db-data:/var/lib/mysql:rw"

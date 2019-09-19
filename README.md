@@ -21,3 +21,15 @@ For a detailed explanation on how things work, check out the [guide](http://vuej
 
 ## Database
 The date is stored on mLabs.  Connection string is not shared in this repo.
+
+## Docker stuff
+
+### Front end
+Build container:
+
+`podman build -t joellord/ctrkr-front --build-arg clientId=wSC1eR3087oo6wKt43TsNtWpbANLVBK8 --build-arg domain=conf-tracker.auth0.com --build-arg audience=http://conf-tracker.com .
+`
+
+Run container
+
+`podman run --rm --name front -d -p 8080:80 joellord/ctrkr-front`

@@ -10,7 +10,7 @@ const ACCESS_TOKEN_KEY = "access_token";
 
 const CLIENT_ID = creds.CLIENT_ID;
 const DOMAIN = creds.DOMAIN;
-const REDIRECT = creds.REDIRECT;
+const REDIRECT = location.origin + creds.REDIRECT;
 const SCOPE = creds.SCOPE;
 const AUDIENCE = creds.AUDIENCE;
 

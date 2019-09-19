@@ -15,13 +15,13 @@ const expressPermissions = require("express-jwt-permissions");
 const now = helpers.now;
 const yesterday = helpers.yesterday;
 
-let creds;
+let creds = process.env; // require("./credentials");
 
-if (process.env.NODE_ENV === "prod") {
-  creds = process.env;
-} else {
-  creds = require("./credentials");
-}
+// if (process.env.NODE_ENV === "prod") {
+//   creds = process.env;
+// } else {
+// creds = require("./credentials");
+// }
 
 const CONNECTION_STRING = creds.DB_CONN_STRING;
 const PORT = process.env.PORT || 3333;
