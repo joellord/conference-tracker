@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS conferences (
   state VARCHAR(100),
   country VARCHAR(100),
   url VARCHAR(250),
+  cfpDate BIGINT,
   cfpUrl VARCHAR(250),
   twitter VARCHAR(100),
   relationshipGoal INT,

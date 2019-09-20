@@ -762,7 +762,7 @@ app.get("/api/stats", [authCheck], (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendFile(__dirname + "/dist/index.html");
+  res.sendFile(__dirname + "../tracker/dist/index.html");
 });
 
 app.listen(PORT, () => {
