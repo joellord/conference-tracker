@@ -6,7 +6,9 @@ import { getAccessToken, getUserParam } from "./auth";
 // import credentials from "./credentials";
 
 // const BASE_URL = `http://${credentials.API}`;
-const BASE_URL = location.hostname.replace("ctrkr-front-", "conference-tracker-");
+const APP_NAME = "tracker-front";
+const API_NAME = "conference-tracker";
+const BASE_URL = "http://" + location.hostname.replace(`${APP_NAME}-`, `${API_NAME}-`);
 
 
 function getHeaders() {

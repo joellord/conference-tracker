@@ -10,7 +10,7 @@ const mysql = require("mysql");
 
 const events = require("./server-utils/events");
 const helpers = require("./server-utils/helpers");
-const expressPermissions = require("express-jwt-permissions");
+// const expressPermissions = require("express-jwt-permissions");
 
 const now = helpers.now;
 const yesterday = helpers.yesterday;
@@ -44,7 +44,7 @@ const authCheck = jwt({
   algorithms: ["RS256"]
 });
 
-const guard = expressPermissions();
+// const guard = expressPermissions();
 
 const getUserId = (headers) => {
   if (!headers.Authorization && !headers.authorization) return null;
@@ -109,7 +109,7 @@ app.get("/api/public", (req, res) => {
   res.json({value: "Hello"});
 });
 
-app.get("/api/conferences", [authCheck, guard.check("conference:list")], (req, res) => {
+app.get("/api/conferences", [authCheck], (req, res) => {
   let userId;
   getDBUserId(req.headers).then(id => {
     userId = id;
@@ -196,7 +196,7 @@ app.get("/api/conference/slk", (req, res) => {
   });
 });
 
-app.get("/api/conference/:id", [authCheck, guard.check("conference:details")], (req, res) => {
+app.get("/api/conference/:id", [authCheck], (req, res) => {
   let conferenceId = req.params.id;
   let fullConference;
 
@@ -225,7 +225,7 @@ app.get("/api/conference/:id", [authCheck, guard.check("conference:details")], (
   }).catch(err => console.log(err));
 });
 
-app.get("/api/conference/:id/submissions", [authCheck, guard.check("conference:submissions")], (req, res) => {
+app.get("/api/conference/:id/submissions", [authCheck], (req, res) => {
   let userId;
   let conferenceId = req.params.id;
 
@@ -241,7 +241,7 @@ app.get("/api/conference/:id/submissions", [authCheck, guard.check("conference:s
   });
 });
 
-app.post("/api/conference/:id/approvals", [authCheck, guard.check("conference:submit")], (req, res) => {
+app.post("/api/conference/:id/approvals", [authCheck], (req, res) => {
   const approvedSubmissions = req.body;
   let userId;
   let conference;
@@ -292,7 +292,7 @@ app.post("/api/conference/:id/approvals", [authCheck, guard.check("conference:su
   });
 });
 
-app.post("/api/conference/:id/rejected", [authCheck, guard.check("conference:submit")], (req, res) => {
+app.post("/api/conference/:id/rejected", [authCheck], (req, res) => {
   let userId;
   let conferenceId = req.params.id;
   let hookData = {};
@@ -323,7 +323,7 @@ app.post("/api/conference/:id/rejected", [authCheck, guard.check("conference:sub
   });
 });
 
-app.post("/api/conference", [authCheck, guard.check("conference:add")], (req, res) => {
+app.post("/api/conference", [authCheck], (req, res) => {
   console.log("Adding new conference", req.body);
   let sql = `INSERT INTO conferences SET ?`;
 
@@ -334,7 +334,7 @@ app.post("/api/conference", [authCheck, guard.check("conference:add")], (req, re
   });
 });
 
-app.put("/api/conference/:id", [authCheck, guard.check("conference:add")],  (req,  res) => {
+app.put("/api/conference/:id", [authCheck],  (req,  res) => {
   console.log("Updating conference", req.body);
   let data = req.body;
   let conferenceId = req.params.id;
@@ -351,7 +351,7 @@ app.put("/api/conference/:id", [authCheck, guard.check("conference:add")],  (req
   });
 });
 
-app.get("/api/talks", [authCheck, guard.check("talk:list")], (req, res) => {
+app.get("/api/talks", [authCheck], (req, res) => {
   getDBUserId(req.headers).then(id => {
     let sql = `SELECT *, id _id FROM talks WHERE userId = ?`;
     return query(sql, [id]);
@@ -360,7 +360,7 @@ app.get("/api/talks", [authCheck, guard.check("talk:list")], (req, res) => {
   });
 });
 
-app.post("/api/talk", [authCheck, guard.check("talk:list")], (req, res) => {
+app.post("/api/talk", [authCheck], (req, res) => {
   console.log("Create new talk");
 
   getDBUserId(req.headers).then(id => {
@@ -372,13 +372,13 @@ app.post("/api/talk", [authCheck, guard.check("talk:list")], (req, res) => {
   });
 });
 
-app.get("/api/talk/:id", [authCheck, guard.check("talk:list")],  (req,  res) => {
+app.get("/api/talk/:id", [authCheck],  (req,  res) => {
   queryOne(`SELECT * FROM talks WHERE id = ?`, [req.params.id]).then(talk => {
     res.json(talk);
   });
 });
 
-app.put("/api/talk/:id", [authCheck, guard.check("talk:list")],  (req,  res) => {
+app.put("/api/talk/:id", [authCheck],  (req,  res) => {
   console.log("Update talk " + req.params.id, req.body);
   let data = req.body;
   delete data.id;
@@ -391,7 +391,7 @@ app.put("/api/talk/:id", [authCheck, guard.check("talk:list")],  (req,  res) => 
   });
 });
 
-app.post("/api/conference/:id/submissions", [authCheck, guard.check("conference:submit")], (req, res) => {
+app.post("/api/conference/:id/submissions", [authCheck], (req, res) => {
   let userId;
   let conferenceId = req.params.id;
 
@@ -457,7 +457,7 @@ app.post("/api/user", authCheck, (req, res) => {
   });
 });
 
-app.get("/api/meetups", [authCheck, guard.check("meetup:list")], (req, res) => {
+app.get("/api/meetups", [authCheck], (req, res) => {
   getDBUserId(req.headers).then(id => {
     let sql = `SELECT m.*, m.id _id 
       FROM meetups m, users u 
@@ -475,7 +475,7 @@ app.get("/api/meetups", [authCheck, guard.check("meetup:list")], (req, res) => {
   });
 });
 
-app.get("/api/meetup/:meetupId", [authCheck, guard.check("meetup:details")], (req, res) => {
+app.get("/api/meetup/:meetupId", [authCheck], (req, res) => {
   let meetup;
   queryOne(`SELECT * FROM meetups WHERE id = ?`, [req.params.meetupId]).then(data => {
     meetup = data;
@@ -492,7 +492,7 @@ app.get("/api/meetup/:meetupId", [authCheck, guard.check("meetup:details")], (re
   });
 });
 
-app.put("/api/meetup/approved/:meetupId", [authCheck, guard.check("meetup:list")],  (req,  res) => {
+app.put("/api/meetup/approved/:meetupId", [authCheck],  (req,  res) => {
   let userId;
   let hookData = {};
   let meetupIncomingData = req.body;
@@ -536,7 +536,7 @@ app.put("/api/meetup/approved/:meetupId", [authCheck, guard.check("meetup:list")
   });
 });
 
-app.post("/api/meetup/applied", [authCheck, guard.check("meetup:list")], (req, res) => {
+app.post("/api/meetup/applied", [authCheck], (req, res) => {
   console.log("User applied to meetup");
 
   getDBUserId(req.headers).then(id => {
@@ -559,7 +559,7 @@ app.post("/api/meetup/applied", [authCheck, guard.check("meetup:list")], (req, r
   });
 });
 
-app.post("/api/meetup/rejected/:id", [authCheck, guard.check("meetup:list")], (req, res) => {
+app.post("/api/meetup/rejected/:id", [authCheck], (req, res) => {
   console.log("Rejected from meetups :(");
 
   let sql = `UPDATE meetups SET status = "REJECTED" WHERE id = ?`;
@@ -568,7 +568,7 @@ app.post("/api/meetup/rejected/:id", [authCheck, guard.check("meetup:list")], (r
   });
 });
 
-app.post("/api/meetup/dropped/:id", [authCheck, guard.check("meetup:list")], (req, res) => {
+app.post("/api/meetup/dropped/:id", [authCheck], (req, res) => {
   console.log("Meetup flagged as fuck it");
 
   let sql = `UPDATE meetups SET status = "DROPPED" WHERE id = ?`;
@@ -577,7 +577,7 @@ app.post("/api/meetup/dropped/:id", [authCheck, guard.check("meetup:list")], (re
   });
 });
 
-app.get("/api/reports/todo", [authCheck, guard.check("report:due")], (req, res) => {
+app.get("/api/reports/todo", [authCheck], (req, res) => {
   let reportsTodo = [];
   let userId;
   getDBUserId(req.headers).then(id => {
@@ -613,7 +613,7 @@ app.get("/api/reports/todo", [authCheck, guard.check("report:due")], (req, res) 
   });
 });
 
-app.post("/api/report", [authCheck, guard.check("report:add")], (req, res) => {
+app.post("/api/report", [authCheck], (req, res) => {
   console.log("Creating post-event report");
 
   getDBUserId(req.headers).then(userId => {
@@ -689,7 +689,7 @@ app.get("/api/event-types", authCheck, (req, res) => {
   query(`SELECT * FROM eventTypes`, []).then(result => res.json(result));
 });
 
-app.get("/api/stats", [authCheck, guard.check("stats:read")], (req, res) => {
+app.get("/api/stats", [authCheck], (req, res) => {
   let stats = {};
   let sql = `SELECT COUNT(id) totalEvents, SUM(developersReached) totalDevelopersReached,
       SUM(CASE WHEN regionId = 1 THEN developersReached ELSE 0 END) regionAmericas,

@@ -22,7 +22,6 @@ import Report from "@/components/report";
 import Stats from "@/components/stats";
 
 import { isLoggedIn } from "../utils/auth";
-import { isGuest, isPermissionEnabled, PERMISSIONS } from "../utils/acl";
 
 Vue.use(Router);
 
@@ -30,18 +29,6 @@ function requireAuth(to, from, next) {
   if (!isLoggedIn()) {
     return next({
       path: "/"
-    });
-  }
-
-  if (isGuest()) {
-    return next({
-      path: "/needinvite"
-    });
-  }
-
-  if (to.meta.requiredPermission && !isPermissionEnabled(to.meta.requiredPermission)) {
-    return next({
-      path: "/unauthorized"
     });
   }
 
@@ -70,37 +57,25 @@ export default new Router({
       path: "/conferences",
       name: "Conferences",
       component: Conferences,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.CONFERENCE.LIST
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/conference/:conferenceId",
       name: "ConferenceDetails",
       component: ConferenceDetails,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.CONFERENCE.DETAILS
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/conferences/submitted/:conferenceId",
       name: "Submitted",
       component: Submitted,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.CONFERENCE.SUBMIT
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/conferences/approved/:conferenceId",
       name: "Approved",
       component: Approved,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.CONFERENCE.SUBMIT
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/upcoming",
@@ -112,100 +87,67 @@ export default new Router({
       path: "/talks",
       name: "Talks",
       component: Talks,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.TALK.LIST
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/talk/:talkId",
       name: "Talk",
       component: Talk,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.TALK.LIST
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/profile",
       name: "Profile",
       component: Profile,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.PROFILE.ALL
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/meetups",
       name: "Meetups",
       component: Meetups,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.MEETUP.LIST
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/meetups/find",
       name: "MeetupFind",
       component: MeetupsFind,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.MEETUP.FIND
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/meetups/applied/:urlname",
       name: "MeetupsApplied",
       component: MeetupsApplied,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.MEETUP.FIND
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/meetups/accepted/:meetupId",
       name: "MeetupsAccepted",
       component: MeetupsAccepted,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.MEETUP.FIND
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/meetup/:meetupId",
       name: "MeetupDetails",
       component: MeetupDetails,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.MEETUP.DETAILS
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/reports",
       name: "Reports",
       component: Reports,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.REPORT.ADD
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/report/:type/:eventId?",
       name: "Report",
       component: Report,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.REPORT.ADD
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/stats",
       name: "Stats",
       component: Stats,
-      beforeEnter: requireAuth,
-      meta: {
-        requiredPermission: PERMISSIONS.STATS.READ
-      }
+      beforeEnter: requireAuth
     },
     {
       path: "/callback",

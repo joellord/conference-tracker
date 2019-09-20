@@ -8,15 +8,15 @@
     <b-collapse is-nav id="nav_collapse">
 
       <b-navbar-nav>
-        <b-nav-item v-if="permissions.showConferenceLink" to="/conferences">Conferences</b-nav-item>
-        <b-nav-item v-if="permissions.showMeetupLink"  to="/meetups">Meetups</b-nav-item>
-        <b-nav-item v-if="permissions.showUpcomingLink"  to="/upcoming">Upcoming</b-nav-item>
-        <b-nav-item v-if="permissions.showTalkLink"  to="/talks">My Talks</b-nav-item>
-        <b-nav-item v-if="permissions.showReportLink"  to="/reports">
+        <b-nav-item to="/conferences">Conferences</b-nav-item>
+        <b-nav-item to="/meetups">Meetups</b-nav-item>
+        <b-nav-item to="/upcoming">Upcoming</b-nav-item>
+        <b-nav-item to="/talks">My Talks</b-nav-item>
+        <b-nav-item to="/reports">
           Post-Event Reports
           <b-badge pill variant="warning" v-if="notifications.reports > 0">{{ notifications.reports }}</b-badge>
         </b-nav-item>
-        <b-nav-item v-if="permissions.showStatLink"  to="/stats">Stats</b-nav-item>
+        <b-nav-item to="/stats">Stats</b-nav-item>
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->
@@ -27,7 +27,7 @@
           <template slot="button-content">
             <img :src="getUserImage" class="profile-pic"/>
           </template>
-          <b-dropdown-item v-if="permissions.showProfileLink"  to="/profile">
+          <b-dropdown-item to="/profile">
             Profile
           </b-dropdown-item>
           <b-dropdown-item href="#" @click="handleLogout()">Logout</b-dropdown-item>
@@ -42,7 +42,6 @@
 
 <script>
 import { isLoggedIn, getUserImage, login, logout } from "../utils/auth";
-import { getNavbarPermissions } from "../utils/acl";
 import { getNotifications } from "../utils/conf-api";
 
 export default {
@@ -65,7 +64,6 @@ export default {
   },
   data() {
     return {
-      permissions: getNavbarPermissions(),
       getUserImage: getUserImage(),
       notifications: { reports: 0 }
     };

@@ -11,7 +11,8 @@
     "e2e": "node test/e2e/runner.js",
     "test": "npm run unit && npm run e2e",
     "lint": "eslint --ext .js,.vue src test/unit test/e2e/specs",
-    "build": "node build/build.js"
+    "build": "node build/build.js",
+    "deploy": "npm run build && docker build -t joellord/tracker-front . && docker push joellord/tracker-front && oc delete all --selector app=tracker-front && oc new-app docker.io/joellord/tracker-front && oc expose service tracker-front --port=8080"
   },
   "dependencies": {
     "auth0-js": "^9.10.2",

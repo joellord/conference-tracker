@@ -16,6 +16,7 @@ export default {
       setAccessToken();
       setIdToken();
       const user = jwtDecode(getIdToken());
+      console.log(user);
       saveLocalUser({
         name: user.name,
         picture: user.picture,
