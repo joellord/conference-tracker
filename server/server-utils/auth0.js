@@ -3,13 +3,13 @@ const cloudinary = require("cloudinary");
 const puppeteer = require("puppeteer");
 const helpers = require("./helpers");
 
-let creds;
+// let creds;
 
-if (process.env.NODE_ENV === "prod") {
-  creds = process.env;
-} else {
-  creds = require("../credentials");
-}
+// if (process.env.NODE_ENV === "prod") {
+//   creds = process.env;
+// } else {
+//   creds = require("../credentials");
+// }
 
 function encodeData(data) {
   for(let key in data) {
@@ -97,9 +97,9 @@ function createSLK(c, t, s) {
     console.log("We got a screenshot");
     //Upload to cloudinary
     cloudinary.config({
-      cloud_name: creds.CLOUDINARY_CLOUD_NAME,
-      api_key: creds.CLOUDINARY_API_KEY,
-      api_secret: creds.CLOUDINARY_API_SECRET
+      // cloud_name: creds.CLOUDINARY_CLOUD_NAME,
+      // api_key: creds.CLOUDINARY_API_KEY,
+      // api_secret: creds.CLOUDINARY_API_SECRET
     });
 
     return (new Promise((resolve, reject) => {
