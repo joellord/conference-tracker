@@ -65,13 +65,11 @@
 </template>
 
 <script>
-import Button from "bootstrap-vue/es/components/button/button";
 import AppNav from "./AppNav";
 import { getTalkById, updateTalk } from "../utils/conf-api";
 
 export default {
   components: {
-    Button,
     AppNav },
   name: "Talk",
   data() {

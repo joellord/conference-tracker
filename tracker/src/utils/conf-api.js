@@ -3,9 +3,10 @@ import { getAccessToken, getUserParam } from "./auth";
 
 // const BASE_URL = "https://conf-tracker.herokuapp.com";
 // const BASE_URL = "http://localhost:3333";
-import credentials from "./credentials";
+// import credentials from "./credentials";
 
-const BASE_URL = `http://${credentials.API}`;
+// const BASE_URL = `http://${credentials.API}`;
+const BASE_URL = location.hostname.replace("ctrkr-front-", "conference-tracker-");
 
 
 function getHeaders() {
