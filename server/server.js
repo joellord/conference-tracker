@@ -153,7 +153,7 @@ app.get("/api/upcoming/:week?", (req, res) => {
         AND s.status = "APPROVED"
         AND c.startDate > ${now()} 
         ${req.params.week ? 'AND c.startDate < ' + (now() + 7*24*60*60*1000) : ''}
-      GROUP BY c.name`;
+      GROUP BY c.id`;
 
   query(sql).then(conferences => {
     upcoming = upcoming.concat(conferences);
