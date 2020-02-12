@@ -1,3 +1,6 @@
+CREATE DATABASE conftracker;
+USE conftracker;
+
 CREATE TABLE IF NOT EXISTS conferences (
   id INT AUTO_INCREMENT PRIMARY KEY,
   mongodbId VARCHAR(100),

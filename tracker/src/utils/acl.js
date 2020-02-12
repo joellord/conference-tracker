@@ -42,9 +42,9 @@ const setPermissions = (newPermissions) => {
   return permissions;
 };
 
-const isGuest = () => false; //!permissions.length;
+const isGuest = () => false; // !permissions.length;
 
-const isPermissionEnabled = true; //permission => permissions.indexOf(permission) > -1;
+const isPermissionEnabled = true; // permission => permissions.indexOf(permission) > -1;
 
 // eslint-disable-next-line arrow-body-style
 const getNavbarPermissions = () => {

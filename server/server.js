@@ -102,8 +102,8 @@ const query = (sql, params) => {
 const queryOne = (sql, params) => {
   return query(sql, params).then(data => data[0]);
 };
-
-app.use(express.static("dist"));
+console.log(`Serving static from ${process.env.UI_BUILD}`);
+app.use(express.static(process.env.UI_BUILD || "dist"));
 
 app.get("/api/public", (req, res) => {
   res.json({value: "Hello"});
@@ -762,7 +762,7 @@ app.get("/api/stats", [authCheck], (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendFile(__dirname + "../tracker/dist/index.html");
+  res.sendFile(`${process.env.UI_BUILD || "./dist"}/index.html`);
 });
 
 app.listen(PORT, () => {
