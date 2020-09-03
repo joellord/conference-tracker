@@ -25,7 +25,7 @@
     "nodemon": "^1.18.9",
     "pageres": "^4.5.1",
     "pg": "^7.4.1",
-    "puppeteer": "^1.12.2",
+    "puppeteer": "^1.13.0",
     "vue-clipboard2": "^0.1.0"
   }
 }
